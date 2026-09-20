@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isTeam() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/team/$(request.auth.token.email));
+    }
+
+    // Events: everyone can read published ones; the team can read drafts and edit.
+    match /events/{eventId} {
+      allow get: if resource.data.published == true || isTeam();
+      allow list: if true; // client-side queries already filter unpublished ones for non-team users
+      allow write: if isTeam();
+    }
+
+    // Workspace (tasks / budget / notes per event): team only, both ways.
+    match /workspace/{eventId} {
+      allow read, write: if isTeam();
+    }
+
+    // Announcements: public read, team can post/edit/delete.
+    match /announcements/{postId} {
+      allow read: if true;
+      allow write: if isTeam();
+    }
+
+    // Suggestions & questions: a signed-in visitor can create their own and read their own;
+    // the team can read and reply to all of them.
+    match /submissions/{subId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read: if isTeam() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow update: if isTeam();
+      allow delete: if isTeam();
+    }
+
+    // Team roster: doc ID is the member's lowercase Google email.
+    // Add the first member by hand in the Firebase console — see README.
+    match /team/{email} {
+      allow read: if isTeam();
+      allow write: if isTeam();
+    }
+
+    // Email subscribers: anyone can sign up (no account needed), only the team can read the list.
+    // The Cloud Function reads this with the admin SDK, which bypasses these rules entirely.
+    match /subscribers/{email} {
+      allow create: if request.resource.data.email is string
+        && request.resource.data.email == email
+        && request.resource.data.keys().hasOnly(["email", "subscribedAt"]);
+      allow read, update, delete: if isTeam();
+    }
+  }
+}
