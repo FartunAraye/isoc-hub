@@ -16,11 +16,43 @@ const firebaseConfig = {
   measurementId: "G-3J98J9J5KZ"
 };
 
-// Shown in the header and hero. Leave `sub` empty to hide it.
+// Shown in the header and hero. 
 const SOCIETY = {
   name: "Islamic Society",
-  sub: "",
-  tagline: "Faith, friendship and good company."
+  sub: "University of Birmingham Dubai",
+  tagline: "Faith, friendship and good company.",
+  joinUrl: "",   // paste your sign-up link; leave "" to hide the Join button
+  instagram: ""     // full URL; leave "" to hide the footer link
+};
+
+const ABOUT = {
+  title: "About the society",
+  intro: [
+    "Islamic Society at the University of Birmingham Dubai is a student-led community for Muslims and anyone interested in learning more about Islam. We aim to create a welcoming space where students can connect, learn, practise their faith and take part in activities together.",
+    "We are currently growing our community with new students always welcome to join. Throughout the year, we organise activities, events and opportunities for students to come together and build a stronger sense of community."
+  ],
+  faqs: [
+    { q: "How do I find the next event?", a: "Check the Events tab for upcoming activities and events. You can also contact us through the details provided on the Home page if you have any questions." },
+    { q: "Where is the prayer room?", a: "The prayer room is on the ground floor of the university. After entering the university, head to the right and look for the second elevator on the right-hand side. The prayer room is located next to it." }
+  ]
+};
+
+const TEAM = {
+  intro: "Meet the team behind Islamic Society at the University of Birmingham Dubai, working together to build a welcoming space for faith, community and student life.",
+  members: [
+    { role: "President",              name: "", photo: "", blurb: "" },
+    { role: "Vice President",         name: "", photo: "", blurb: "" },
+    { role: "Events Lead",            name: "", photo: "", blurb: "" },
+    { role: "Outreach Lead",          name: "", photo: "", blurb: "" },
+    { role: "Marketing Lead",         name: "", photo: "", blurb: "" },
+  
+    { role: "Sisters Representative", name: "", photo: "", blurb: "" },
+    { role: "Brothers Representative",name: "", photo: "", blurb: "" },
+  
+    { role: "Committee Member",       name: "", photo: "", blurb: "" },
+    { role: "Committee Member",       name: "", photo: "", blurb: "" },
+    { role: "Committee Member",       name: "", photo: "", blurb: "" }
+  ]
 };
 
 /* =====================================================================
@@ -48,24 +80,20 @@ const hijriToday = () => {
   catch { return ""; }
 };
 
-// Subtle geometric tiling behind everything (eight-pointed stars)
-(() => {
-  const s = "rgba(201,165,92,0.14)";
-  const star = (x, y, r) => `<g transform="translate(${x} ${y})" fill="none" stroke="${s}" stroke-width="1"><rect x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}"/><rect x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" transform="rotate(45)"/></g>`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">${star(36, 36, 14)}${star(0, 0, 14)}${star(72, 0, 14)}${star(0, 72, 14)}${star(72, 72, 14)}<circle cx="36" cy="36" r="2" fill="${s}"/></svg>`;
-  document.documentElement.style.setProperty("--pattern", `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
-})();
+// Background wash now lives entirely in style.css (--pattern), so it can be
+// edited there without touching this file. See the :root block at the top
+// of style.css if you want to adjust the tone or intensity.
 
 /* =====================================================================
    3. CATEGORIES + STARTER EVENTS
    ===================================================================== */
 const CATS = {
-  welcome:  { label: "Welcome",          icon: "i-crescent" },
-  faith:    { label: "Faith & Learning", icon: "i-book" },
-  creative: { label: "Creative",         icon: "i-star" },
-  social:   { label: "Social",           icon: "i-lantern" },
-  outdoors: { label: "Outdoors",         icon: "i-target" },
-  charity:  { label: "Charity",          icon: "i-heart" }
+  welcome:  { label: "Welcome",          icon: "i-crescent", desc: "Welcome Week and the Icebreaker Night: your first chance to meet the committee." },
+  faith:    { label: "Faith & Learning", icon: "i-book",     desc: "A weekly Quran reflection, tajweed and hifz clubs, and friendly hifz and hadith competitions." },
+  creative: { label: "Creative",         icon: "i-star",     desc: "Tatreez, henna, painting and zine-making workshops, some with the Creative Pod." },
+  social:   { label: "Social",           icon: "i-lantern",  desc: "Chai chats, movie and games nights, Family Feud, the BBQ and the Eid carnival." },
+  outdoors: { label: "Outdoors",         icon: "i-target",   desc: "Horse riding, archery and other days out." },
+  charity:  { label: "Charity",          icon: "i-heart",    desc: "Bake sales, tote bags, Charity Week and the Fastathon." }
 };
 const BCOL = { gold: "var(--gold)", amber: "var(--amber)", mint: "#7fd6ad", sky: "#7cc7d6" };
 const BCOLORS = Object.keys(BCOL);
@@ -179,16 +207,18 @@ const normWs = (d = {}) => ({
 });
 
 const now0 = new Date();
+const VIEWS = ["home", "about", "calendar", "people", "ask", "team"];
+const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS.includes(v) ? v : "home"; };
 const S = {
   mode: "local",              // "live" once Firebase is configured
   user: null, isTeam: false,
-  view: store.get("isoc-view", "home"),
+  view: viewFromHash(),
   events: [], workspace: {}, announcements: [], submissions: [], members: [],
   loaded: { events: false },
   month: { y: now0.getFullYear(), m: now0.getMonth() }, cat: "all",
   askKind: "suggestion",
   teamTab: "events", evFilter: "all", openWs: null, inboxFilter: "new",
-  modal: null, drafts: {}, expT: new Set(), expB: new Set(), pendingRender: false
+  modal: null, drafts: {}, expT: new Set(), expB: new Set(), pendingRender: false, openFaq: new Set()
 };
 
 const configured = !String(firebaseConfig.apiKey).startsWith("PASTE");
@@ -306,7 +336,7 @@ const lantern = () => `<svg class="lantern" viewBox="0 0 64 130" aria-hidden="tr
 
 function render() {
   if (S.view === "team" && !S.isTeam) S.view = "home";
-  const views = { home: homeHtml, calendar: calendarHtml, ask: askHtml, team: teamHtml };
+  const views = { home: homeHtml, about: aboutHtml, calendar: calendarHtml, people: peopleHtml, ask: askHtml, team: teamHtml };
   $("#app").innerHTML = `<div class="wrap">${headerHtml()}${navHtml()}<main>${(views[S.view] || homeHtml)()}</main>
     <footer class="foot"><div class="orn"><i></i>${ico("i-star")}<i></i></div>${esc(SOCIETY.name)}</footer></div>`;
   updateCountdowns();
@@ -328,8 +358,8 @@ function headerHtml() {
 }
 
 function navHtml() {
-  const tabs = [["home", "Home"], ["calendar", "Calendar"], ["ask", "Ask & suggest"]];
-  if (S.isTeam) tabs.push(["team", "Team workspace"]);
+  const tabs = [["home", "Home"], ["about", "About us"], ["calendar", "Events"], ["people", "Our team"], ["ask", "Ask & suggest"]];
+  if (S.isTeam) tabs.push(["team", "Workspace"]);
   const n = unread();
   return `<nav class="nav" aria-label="Main">${tabs.map(([k, l]) => `<button class="navbtn${S.view === k ? " is-on" : ""}" data-act="nav" data-v="${k}">${l}${k === "home" && n && S.view !== "home" ? `<span class="badge">${n}</span>` : ""}</button>`).join("")}</nav>`;
 }
@@ -337,19 +367,24 @@ function navHtml() {
 /* ---------- home ---------- */
 function archHtml(o) {
   if (!o) {
-    return `<div class="arch">${lantern()}<div class="arch-in"><span class="bigstar">${ico("i-star")}</span><h3>Events are being planned</h3><p class="when" style="justify-content:center">Check back soon, in shā’ Allāh.</p></div></div>`;
+    return `<div class="arch-frame"><div class="arch arch--empty"><div class="arch-in">
+      <span class="bigstar">${ico("i-star")}</span><h3>Events are being planned</h3>
+      <p class="when" style="justify-content:center">Check back soon, in shā’ Allāh.</p>
+    </div></div></div>`;
   }
   const e = o.ev;
-  return `<div class="arch c-${e.cat}">${lantern()}<div class="arch-in">
-    <div class="nextlbl">Next up</div>
-    <div class="dayn">${o.start.getDate()}</div>
-    <div class="mon">${o.start.toLocaleDateString([], { month: "long" })}</div>
-    <h3>${esc(e.title)}</h3>
-    <div class="when">${ico("i-clock")}${fmtDay(o.start)}, ${fmtTime(o.start)}</div>
-    ${e.location ? `<div class="when">${ico("i-pin")}${esc(e.location)}</div>` : ""}
-    <div class="until" data-until="${o.start.toISOString()}">${until(o.start)}</div>
-    <div><button class="btn small" data-act="open-event" data-id="${esc(e.id)}" data-t="${o.start.getTime()}">Details</button></div>
-  </div></div>`;
+  return `<div class="arch-frame">
+    <div class="arch c-${e.cat}"><div class="arch-in">
+      <div class="nextlbl">Next up</div>
+      <div class="dayn">${o.start.getDate()}</div>
+      <div class="mon">${o.start.toLocaleDateString([], { month: "long" })}</div>
+      <h3>${esc(e.title)}</h3>
+      <div class="when">${ico("i-clock")}${fmtDay(o.start)}, ${fmtTime(o.start)}</div>
+      ${e.location ? `<div class="when">${ico("i-pin")}${esc(e.location)}</div>` : ""}
+      <div class="until" data-until="${o.start.toISOString()}">${until(o.start)}</div>
+      <div><button class="btn small" data-act="open-event" data-id="${esc(e.id)}" data-t="${o.start.getTime()}">Details</button></div>
+    </div></div>
+  </div>`;
 }
 
 function progRow(o) {
@@ -396,6 +431,61 @@ function homeHtml() {
       ${anns.length ? anns.map(annHtml).join("") : `<p class="empty">Nothing posted yet.</p>`}</section>
     <section class="sec"><div class="sec-head"><h2>Coming up</h2><span class="rule"></span></div>${list}</section>
     ${subscribeHtml()}`;
+}
+
+function aboutHtml() {
+  return `<section class="sec">
+    <div class="sec-head"><h2>${esc(ABOUT.title)}</h2><span class="rule"></span></div>
+    <div class="prose">${ABOUT.intro.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
+
+    <div class="sec-head" style="margin-top:40px"><h2>What we do</h2><span class="rule"></span></div>
+    <dl class="dolist">${Object.values(CATS).map((c) => `<div><dt>${esc(c.label)}</dt><dd>${esc(c.desc)}</dd></div>`).join("")}</dl>
+
+    <div class="sec-head" style="margin-top:40px"><h2>Good to know</h2><span class="rule"></span></div>
+    <div class="faq">${ABOUT.faqs.map((f, i) => `<details data-faq="${i}"${S.openFaq.has(i) ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
+  </section>`;
+}
+
+const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+
+function personHtml(p) {
+  const named = !!p.name;
+  const face = p.photo
+    ? `<img class="face" src="${esc(p.photo)}" alt="" width="400" height="480" loading="lazy">`
+    : `<div class="face face--blank" aria-hidden="true">${named ? esc(initials(p.name)) : ""}</div>`;
+  return `<article class="person">${face}
+    <h3>${esc(named ? p.name : p.role)}</h3>
+    <p class="role">${named ? esc(p.role) : "Not announced yet"}</p>
+    ${p.blurb ? `<p class="bio">${esc(p.blurb)}</p>` : ""}</article>`;
+}
+
+function peopleHtml() {
+  return `<section class="sec">
+    <div class="sec-head"><h2>Our team</h2><span class="rule"></span></div>
+    <p class="muted">${esc(TEAM.intro)}</p>
+
+    <div class="sec-head" style="margin-top:40px">
+      <h2>Executive Committee</h2><span class="rule"></span>
+    </div>
+    <div class="people">${TEAM.members.filter(p =>
+      ["President", "Vice President", "Events Lead", "Marketing Lead", "Outreach Lead"].includes(p.role)
+    ).map(personHtml).join("")}</div>
+
+    <div class="sec-head" style="margin-top:40px">
+      <h2>Representatives</h2><span class="rule"></span>
+    </div>
+    <div class="people">${TEAM.members.filter(p =>
+      ["Sisters Representative", "Brothers Representative"].includes(p.role)
+    ).map(personHtml).join("")}</div>
+
+    <div class="sec-head" style="margin-top:40px">
+      <h2>Committee Members</h2><span class="rule"></span>
+    </div>
+    <div class="people">${TEAM.members.filter(p =>
+      !["President", "Vice President", "Events Lead", "Marketing Lead", "Outreach Lead",
+        "Sisters Representative", "Brothers Representative"].includes(p.role)
+    ).map(personHtml).join("")}</div>
+  </section>`;
 }
 
 /* ---------- calendar ---------- */
@@ -450,7 +540,7 @@ function askHtml() {
   return `<section class="sec"><div class="sec-head"><h2>Ask &amp; suggest</h2><span class="rule"></span></div>
     <p class="muted" style="max-width:60ch">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
     <div class="askgrid"><div>${form}</div>
-      <div><h3 style="font:600 28px var(--disp);color:var(--gold-br)">Your messages</h3>${rows || `<p class="empty" style="padding-left:0">Nothing sent yet.</p>`}</div></div></section>`;
+      <div><h3 style="font:600 28px var(--disp);color:var(--ink)">Your messages</h3>${rows || `<p class="empty" style="padding-left:0">Nothing sent yet.</p>`}</div></div></section>`;
 }
 
 /* ---------- team ---------- */
@@ -509,7 +599,7 @@ function wsHtml(id) {
       <div class="wsactions"><button class="btn small" data-act="edit-event" data-id="${q}">Edit details</button>
       <button class="btn small ${ev.published ? "" : "amber"}" data-act="toggle-publish" data-id="${q}">${ev.published ? "Unpublish" : "Publish"}</button>
       <button class="btn small danger" data-act="delete-event" data-id="${q}">Delete</button></div></div>
-    <div style="margin-top:6px"><h2 style="font:600 44px/1 var(--disp);color:var(--gold-br);margin:8px 0 10px">${esc(ev.title)}</h2>
+    <div style="margin-top:6px"><h2 style="font:600 44px/1 var(--disp);color:var(--ink);margin:8px 0 10px">${esc(ev.title)}</h2>
       <div class="kv"><div><span class="chip">${ico(c.icon)}${c.label}</span><span class="chip ${ev.published ? "good" : "dim"}">${ev.published ? "Published" : "Draft"}</span></div>
       <div>${ico("i-clock")}${st ? `${fmtDay(st)}, ${fmtTime(st)}${ev.repeat === "weekly" ? " (every week)" : ""}` : "No date yet"}</div>
       ${ev.location ? `<div>${ico("i-pin")}${esc(ev.location)}</div>` : ""}</div>
@@ -550,14 +640,14 @@ function inboxHtml() {
 
 function postsHtml() {
   const anns = sortedAnns();
-  return `<div class="askgrid"><div><h3 style="font:600 28px var(--disp);color:var(--gold-br);margin-top:14px">New announcement</h3>
+  return `<div class="askgrid"><div><h3 style="font:600 28px var(--disp);color:var(--ink);margin-top:14px">New announcement</h3>
     <form data-form="announce">
       <label class="lbl" for="an-title">Title</label><input class="field" id="an-title" name="title" maxlength="90" required data-draft="ann-title" value="${dv("ann-title")}">
       <label class="lbl" for="an-body">Message</label><textarea class="field" id="an-body" name="body" maxlength="1200" data-draft="ann-body">${dv("ann-body")}</textarea>
       <label class="check-row"><input type="checkbox" name="pin"> Pin to the top</label>
       <div class="mactions"><button class="btn amber" type="submit">Post</button></div></form>
       <p class="muted small" style="margin-top:10px">Posts show on the Home page for everyone, and email every subscriber automatically.</p></div>
-    <div><h3 style="font:600 28px var(--disp);color:var(--gold-br);margin-top:14px">Posted</h3>${anns.map((a) => `<div class="sub-row"><div class="top-line"><b style="font:600 22px var(--disp)">${esc(a.title)}</b>${a.pinned ? '<span class="chip">Pinned</span>' : ""}</div>
+    <div><h3 style="font:600 28px var(--disp);color:var(--ink);margin-top:14px">Posted</h3>${anns.map((a) => `<div class="sub-row"><div class="top-line"><b style="font:600 22px var(--disp)">${esc(a.title)}</b>${a.pinned ? '<span class="chip">Pinned</span>' : ""}</div>
       <p class="txt muted small">${esc((a.body || "").slice(0, 140))}</p>
       <div class="mactions" style="margin-top:8px"><button class="btn small" data-act="pin-ann" data-id="${esc(a.id)}">${a.pinned ? "Unpin" : "Pin"}</button><button class="btn small danger" data-act="delete-ann" data-id="${esc(a.id)}">Delete</button></div></div>`).join("") || `<p class="empty" style="padding-left:0">Nothing posted yet.</p>`}</div></div>`;
 }
@@ -565,9 +655,9 @@ function postsHtml() {
 function membersHtml() {
   const me = (S.user?.email || "").toLowerCase();
   const list = [...S.members].sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
-  return `<div class="askgrid"><div><h3 style="font:600 28px var(--disp);color:var(--gold-br);margin-top:14px">Team members</h3>
+  return `<div class="askgrid"><div><h3 style="font:600 28px var(--disp);color:var(--ink);margin-top:14px">Team members</h3>
     ${list.map((m) => `<div class="member"><div><div>${esc(m.name || m.email)}</div><div class="muted small">${esc(m.email)}</div></div>${m.email.toLowerCase() === me ? '<span class="chip dim">You</span>' : `<button class="btn small danger" data-act="remove-member" data-id="${esc(m.id)}">Remove</button>`}</div>`).join("") || `<p class="empty" style="padding-left:0">No members yet.</p>`}</div>
-    <div><h3 style="font:600 28px var(--disp);color:var(--gold-br);margin-top:14px">Add someone</h3>
+    <div><h3 style="font:600 28px var(--disp);color:var(--ink);margin-top:14px">Add someone</h3>
     <form data-form="member"><label class="lbl" for="mb-name">Name</label><input class="field" id="mb-name" name="name" maxlength="60" data-draft="mb-name" value="${dv("mb-name")}">
       <label class="lbl" for="mb-email">Google email</label><input class="field" id="mb-email" name="email" type="email" required data-draft="mb-email" value="${dv("mb-email")}">
       <div class="mactions"><button class="btn amber" type="submit">Add to team</button></div></form>
@@ -632,7 +722,7 @@ function notifyModal() {
     <div class="mactions" style="margin-top:14px">${notif.enabled ? `<button class="btn" data-act="notify-off">Turn off</button>` : `<button class="btn amber" data-act="notify-on"${supported ? "" : " disabled"}>Turn on notifications</button>`}</div>
     ${!supported ? `<p class="muted small" style="margin-top:10px">This browser doesn't support notifications. Use “Add to calendar” on an event instead.</p>` : perm === "denied" ? `<p class="muted small" style="margin-top:10px">Notifications are blocked for this site. Allow them in your browser's site settings, then try again.</p>` : ""}
     <label class="lbl" for="lead">Remind me</label><select class="field" id="lead" data-act="notify-lead">${leads.map(([m, l]) => `<option value="${m}"${notif.lead === m ? " selected" : ""}>${l}</option>`).join("")}</select>
-    <div class="card pad" style="margin-top:20px"><b style="font:600 20px var(--disp);color:var(--gold-br)">Good to know</b>
+    <div class="card pad" style="margin-top:20px"><b style="font:600 20px var(--disp);color:var(--ink)">Good to know</b>
       <p class="muted small" style="margin-top:6px">Pop-ups appear while this page is open in a browser tab, including a background tab. To be reminded when the page is closed, open an event and choose “Add to calendar”, or subscribe by email on the Home page. Your phone's calendar will alert you one day and one hour before.</p></div>`;
 }
 
@@ -794,7 +884,7 @@ async function afterAuth(u) {
     try { await getDoc(doc(db, "workspace", "_probe")); S.isTeam = true; } catch { S.isTeam = false; }
   }
   if (S.isTeam && u.email) setDoc(doc(db, "team", u.email.toLowerCase()), { name: u.displayName || "", email: u.email.toLowerCase() }, { merge: true }).catch(() => {});
-  if (!S.isTeam && S.view === "team") S.view = "home";
+  S.view = viewFromHash();
   subscribe();
   render();
 }
@@ -817,8 +907,8 @@ document.addEventListener("click", async (e) => {
   switch (act) {
     case "close-bg": case "close-modal": return closeModal();
     case "nav":
-      if (S.view === "home") markSeen();
-      S.view = el.dataset.v; store.set("isoc-view", S.view); render(); scrollTop(); return;
+      location.hash = el.dataset.v;
+      return;
     case "sign-in":
       if (S.mode !== "live") return toast("Demo mode: connect Firebase to sign in.");
       try { await signInWithPopup(auth, new GoogleAuthProvider()); }
@@ -1004,6 +1094,20 @@ document.addEventListener("change", (e) => {
 });
 
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.modal) closeModal(); });
+window.addEventListener("hashchange", () => {
+  if (S.view === "home") markSeen();
+  S.view = viewFromHash();
+  render(); scrollTop();
+});
+
+// keep FAQ answers open across re-renders (toggle doesn't bubble, so listen in the capture phase)
+document.addEventListener("toggle", (e) => {
+  const d = e.target;
+  if (!d.matches || !d.matches("details[data-faq]")) return;
+  const i = Number(d.dataset.faq);
+  d.open ? S.openFaq.add(i) : S.openFaq.delete(i);
+}, true);
+
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "hidden") return;
   const a = document.activeElement;
