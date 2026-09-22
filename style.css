@@ -1,7 +1,7 @@
 :root{
   --bg:#f4f0e6; --bg2:#ede6d6; --panel:#fbf9f3; --panel2:#e9e2d0;
   --line:rgba(41,66,54,.14); --line-br:rgba(180,147,90,.55);
-  --ink:#293225; --muted:#75816f;
+  --ink:#293225; --muted:#5c6857;
   --gold:#b4935a; --gold-br:#8f6f38; --amber:#294236;
   --good:#5f7d5a; --bad:#a85b42; --warn:#b4935a;
   --disp:"Cormorant Garamond","Georgia",serif;
@@ -26,6 +26,7 @@ a{color:var(--gold-br)}
 .ico{width:16px;height:16px;stroke:currentColor;fill:none;flex:none}
 
 .wrap{max-width:900px;margin:0 auto;padding:18px 18px 90px}
+.wrap--bar{padding-bottom:0}
 
 /* header */
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -71,17 +72,52 @@ textarea.field{min-height:110px;resize:vertical}
 .chip.dim{opacity:.7}
 .empty{color:var(--muted);font-size:13px;padding:18px 0}
 
-/* hero */
-.hero{display:grid;grid-template-columns:1fr 270px;gap:30px;align-items:center;padding:30px 0 10px}
+/* bismillah — used both inline on non-home pages (if any) and inside the
+   full-bleed hero, which overrides colour/size below */
 .bismillah{font-family:"Amiri",serif;font-size:18px;font-weight:600;color:var(--gold-br);margin-bottom:10px;letter-spacing:.01em}
-.hero h1{font-family:var(--disp);font-weight:700;font-size:clamp(32px,6vw,52px);line-height:1.02;color:var(--ink)}
-.hero .lead{color:var(--muted);margin-top:10px;max-width:40ch}
-.hero .cta{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 
-/* the "next up" card: hero-bg.jpg sits inside a real two-centred Islamic arch, clipped
-   with the SVG path in index.html. Kept deliberately small so it doesn't dominate the
-   page, with a lantern hanging above it rather than pinned inside the clipped shape
-   (anything placed near the arch's own pointed apex gets clipped away with it). */
+/* full-bleed home hero: sits outside .wrap in the markup (see render() in
+   app.js) so its background photo can run edge to edge, while the text
+   still lines up with the 900px column used by the rest of the page. */
+.hero-bleed{
+  position:relative;width:100%;min-height:min(78vh,620px);
+  display:flex;flex-direction:column;justify-content:center;
+  padding:60px max(18px,calc((100vw - 900px)/2 + 18px)) 70px;
+  background:linear-gradient(180deg, rgba(20,24,17,.32) 0%, rgba(20,24,17,.74) 100%), var(--panel2) url("hero-bg.jpg") center 30%/cover no-repeat;
+  color:#fff;
+}
+.hero-in{max-width:640px}
+.hero-in .bismillah{font-family:"Amiri",serif;color:#f0c878;font-size:20px;margin-bottom:14px}
+.hero-bleed h1{font-family:var(--disp);font-weight:700;font-size:clamp(38px,7vw,68px);line-height:1.03;color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.35)}
+.hero-bleed .lead{color:#f4f0e6;margin-top:16px;max-width:44ch;font-size:16px;line-height:1.6}
+.hero-bleed .cta{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+.hero-bleed .cta .btn{border-color:rgba(255,255,255,.75);color:#fff}
+.hero-bleed .cta .btn.amber{border-color:var(--amber)}
+.hero-bleed .cta .btn:hover{background:rgba(255,255,255,.16)}
+.hero-more{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);color:#fff;opacity:.85;line-height:0}
+.hero-more .ico{width:24px;height:24px;animation:bob 2.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+/* one deliberate entrance moment for the hero on load — nothing else on the
+   page animates in on scroll, by design */
+.hero-in>*{opacity:0;animation:rise .7s ease-out forwards}
+.hero-in .bismillah{animation-delay:.05s}
+.hero-in h1{animation-delay:.15s}
+.hero-in .lead{animation-delay:.28s}
+.hero-in .cta{animation-delay:.4s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion: reduce){
+  .hero-more .ico{animation:none}
+  .hero-in>*{animation:none;opacity:1}
+}
+
+/* the "next up" card, now sitting on its own under the hero rather than
+   squeezed into a two-column hero row */
+.sec--next{padding-top:28px;display:flex;justify-content:center}
+.sec--next .arch-frame{max-width:340px}
+
+/* the "next up" arch: hero-bg.jpg sits inside a real two-centred Islamic arch, clipped
+   with the SVG path in index.html. */
 .arch-frame{position:relative;width:100%;max-width:230px;margin:0 0 0 auto}
 .arch{
   position:relative;aspect-ratio:3/3.6;border-radius:0;overflow:hidden;
@@ -103,7 +139,7 @@ textarea.field{min-height:110px;resize:vertical}
 .arch .btn{margin-top:12px;border-color:#fff;color:#fff;font-weight:600}
 .arch .btn:hover{background:rgba(255,255,255,.18)}
 .bigstar{color:var(--gold-br);display:inline-flex}
-/* empty state — a plain card, no photo/arch/lantern, for when nothing's scheduled yet */
+/* empty state — a plain card, no photo/arch, for when nothing's scheduled yet */
 .arch--empty{aspect-ratio:auto;clip-path:none;border-radius:var(--radius);background:var(--panel2);box-shadow:none;padding:24px 18px;display:block}
 .arch--empty .arch-in{color:var(--ink);padding:0;height:auto;display:block}
 .arch--empty .bigstar{margin:0 auto 8px;display:flex;justify-content:center}
@@ -121,6 +157,13 @@ textarea.field{min-height:110px;resize:vertical}
 .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
 .sec-head h2{font-family:var(--disp);font-weight:700;font-size:24px;color:var(--gold-br)}
 .rule{flex:1;height:1px;background:var(--line)}
+
+/* "why join us" cards on the home page */
+.whygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:4px}
+.whycard{padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.whycard .ico{width:22px;height:22px;color:var(--gold-br)}
+.whycard h3{font-family:var(--disp);font-size:19px;margin-top:12px}
+.whycard p{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.5}
 
 /* announcements */
 .ann{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:14px 16px;margin-bottom:10px}
@@ -224,15 +267,22 @@ textarea.field{min-height:110px;resize:vertical}
 /* members */
 .member{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);margin-bottom:8px}
 
-/* footer / toast */
-.foot{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);text-align:center;font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px}
-.orn{display:flex;align-items:center;gap:8px}
-.orn i{width:22px;height:1px;background:var(--line-br);display:block}
-.orn .ico{width:12px;height:12px;color:var(--gold-br)}
+/* footer */
+.foot{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+.foot--full{margin-top:70px;padding-top:32px;border-top:1px solid var(--line);text-align:left;display:block}
+.foot-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.foot-brand{display:flex;align-items:center;gap:10px}
+.foot-cols{display:flex;gap:48px;flex-wrap:wrap}
+.foot-cols h4{font-family:var(--disp);font-size:14px;color:var(--ink);margin-bottom:8px}
+.foot-cols a{display:block;font-size:13px;color:var(--muted);text-decoration:none;padding:3px 0}
+.foot-cols a:hover{color:var(--gold-br)}
+.foot-bottom{margin-top:28px;font-size:11px}
+
+/* toast */
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);max-width:92vw;text-align:center;font-size:12.5px;padding:9px 18px;border-radius:6px;border:1px solid var(--line-br);background:var(--ink);color:var(--panel);z-index:30}
 
 /* about */
-.prose{max-width:100%; width:100%}
+.prose{max-width:65ch}
 .prose p+p{margin-top:12px}
 .dolist div{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
 .dolist div:last-child{border-bottom:1px solid var(--line)}
@@ -252,8 +302,6 @@ textarea.field{min-height:110px;resize:vertical}
 .person .bio{font-size:13px;margin-top:8px}
 
 @media (max-width:680px){
-  .hero{grid-template-columns:1fr}
-  .arch-frame{max-width:200px;margin:0 auto}
   .askgrid{grid-template-columns:1fr}
   .two{grid-template-columns:1fr}
   .day{min-height:58px}
@@ -261,6 +309,9 @@ textarea.field{min-height:110px;resize:vertical}
   .nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .navbtn{white-space:nowrap;flex:none}
   .people{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .whygrid{grid-template-columns:1fr}
+  .hero-bleed{min-height:64vh;padding-top:72px;padding-bottom:50px}
+  .hero-in .lead{max-width:30ch}
 }
 
 @media (max-width:520px){

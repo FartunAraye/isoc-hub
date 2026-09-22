@@ -55,6 +55,18 @@ const TEAM = {
   ]
 };
 
+// Shown in the "Why join us" band on the home page. Write your own — say what's
+// actually true of your society this year. Icons are any #i-* id from the
+// sprite in index.html (i-crescent, i-book, i-heart, i-lantern, i-star, i-target, ...).
+const WHY = [
+  { icon: "i-crescent", title: "Community",   body: "Meet people from every course and background. Socials and study sessions where friendships start." },
+  { icon: "i-book",     title: "Faith",        body: "Weekly reflection, tajweed and hifz sessions, and a prayer room you can drop into any time." },
+  { icon: "i-heart",    title: "Support",      body: "New to the university, or just having a hard week? The committee and members are a message away." },
+  { icon: "i-lantern",  title: "Social life",  body: "Chai chats, movie nights and the Eid carnival. No experience or background needed, just come along." },
+  { icon: "i-star",     title: "Learning",     body: "Guest speakers and workshops that treat seeking knowledge as its own act of worship." },
+  { icon: "i-target",   title: "Charity",      body: "Bake sales, fundraising weeks and the Fastathon: giving back together." }
+];
+
 /* =====================================================================
    2. SMALL HELPERS
    ===================================================================== */
@@ -80,7 +92,7 @@ const hijriToday = () => {
   catch { return ""; }
 };
 
-// Background wash now lives entirely in style.css (--pattern), so it can be
+// Background wash now lives entirely in style.css, so it can be
 // edited there without touching this file. See the :root block at the top
 // of style.css if you want to adjust the tone or intensity.
 
@@ -337,8 +349,28 @@ const lantern = () => `<svg class="lantern" viewBox="0 0 64 130" aria-hidden="tr
 function render() {
   if (S.view === "team" && !S.isTeam) S.view = "home";
   const views = { home: homeHtml, about: aboutHtml, calendar: calendarHtml, people: peopleHtml, ask: askHtml, team: teamHtml };
-  $("#app").innerHTML = `<div class="wrap">${headerHtml()}${navHtml()}<main>${(views[S.view] || homeHtml)()}</main>
-    <footer class="foot"><div class="orn"><i></i>${ico("i-star")}<i></i></div>${esc(SOCIETY.name)}</footer></div>`;
+  const isHome = S.view === "home";
+  $("#app").innerHTML = `<div class="wrap wrap--bar">${headerHtml()}${navHtml()}</div>
+    ${isHome ? heroHtml() : ""}
+    <div class="wrap"><main>${(views[S.view] || homeHtml)()}</main>
+      <footer class="foot foot--full">
+        <div class="foot-top">
+          <div class="foot-brand">${emblem()}<div><div class="brand-name">${esc(SOCIETY.name)}</div>${SOCIETY.sub ? `<div class="muted small">${esc(SOCIETY.sub)}</div>` : ""}</div></div>
+          <div class="foot-cols">
+            <div><h4>Explore</h4>
+              <a href="#home" data-act="nav" data-v="home">Home</a>
+              <a href="#about" data-act="nav" data-v="about">About us</a>
+              <a href="#calendar" data-act="nav" data-v="calendar">Events</a>
+              <a href="#people" data-act="nav" data-v="people">Our team</a>
+            </div>
+            <div><h4>Connect</h4>
+              ${SOCIETY.instagram ? `<a href="${esc(SOCIETY.instagram)}" target="_blank" rel="noopener">Instagram</a>` : ""}
+              <a href="#ask" data-act="nav" data-v="ask">Ask &amp; suggest</a>
+            </div>
+          </div>
+        </div>
+        <div class="foot-bottom muted small">${esc(SOCIETY.name)}${SOCIETY.sub ? `, ${esc(SOCIETY.sub)}` : ""}</div>
+      </footer></div>`;
   updateCountdowns();
 }
 
@@ -365,6 +397,23 @@ function navHtml() {
 }
 
 /* ---------- home ---------- */
+
+// Full-bleed banner shown only on the Home view, rendered outside the main
+// .wrap column so its background photo can run edge to edge. See the
+// .hero-bleed rules in style.css for how the text stays aligned to the
+// same column as the rest of the page.
+function heroHtml() {
+  return `<section class="hero-bleed">
+    <div class="hero-in">
+      <div class="bismillah" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+      <h1>${esc(SOCIETY.name)}</h1>
+      <p class="lead">${esc(SOCIETY.tagline)}</p>
+      <div class="cta">${SOCIETY.joinUrl ? `<a class="btn amber" href="${esc(SOCIETY.joinUrl)}" target="_blank" rel="noopener">Join the society</a>` : ""}<button class="btn${SOCIETY.joinUrl ? "" : " amber"}" data-act="nav" data-v="calendar">See what's on</button></div>
+    </div>
+    <a class="hero-more" href="#why" aria-label="Scroll down">${ico("i-crescent")}</a>
+  </section>`;
+}
+
 function archHtml(o) {
   if (!o) {
     return `<div class="arch-frame"><div class="arch arch--empty"><div class="arch-in">
@@ -418,15 +467,9 @@ function homeHtml() {
   const ups = upcoming(pubEvents(), new Date(Date.now() - 0), 8);
   const anns = sortedAnns().slice(0, 4);
   const list = !S.loaded.events ? `<p class="empty">Loading…</p>` : ups.length ? ups.map(progRow).join("") : `<p class="empty">No events are scheduled yet. When the team publishes one, it will show up here.</p>`;
-  return `<section class="hero">
-      <div>
-        <div class="bismillah" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
-        <h1>${esc(SOCIETY.name)}</h1>
-        <p class="lead">${esc(SOCIETY.tagline)}</p>
-        <div class="cta"><button class="btn amber" data-act="nav" data-v="calendar">See the calendar</button><button class="btn" data-act="nav" data-v="ask">Ask or suggest</button></div>
-      </div>
-      ${archHtml(ups[0])}
-    </section>
+  return `${ups[0] ? `<section class="sec sec--next">${archHtml(ups[0])}</section>` : ""}
+    <section class="sec why" id="why"><div class="sec-head"><h2>Why join us</h2><span class="rule"></span></div>
+      <div class="whygrid">${WHY.map((w) => `<div class="whycard">${ico(w.icon)}<h3>${esc(w.title)}</h3><p>${esc(w.body)}</p></div>`).join("")}</div></section>
     <section class="sec"><div class="sec-head"><h2>Announcements</h2><span class="rule"></span></div>
       ${anns.length ? anns.map(annHtml).join("") : `<p class="empty">Nothing posted yet.</p>`}</section>
     <section class="sec"><div class="sec-head"><h2>Coming up</h2><span class="rule"></span></div>${list}</section>
@@ -538,7 +581,7 @@ function askHtml() {
   const rows = mine.map((s) => `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "question" ? "Question" : "Suggestion"}</span><span class="chip ${s.status === "answered" ? "good" : "dim"}">${s.status === "answered" ? "Answered" : "Received"}</span></div>
       <p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
   return `<section class="sec"><div class="sec-head"><h2>Ask &amp; suggest</h2><span class="rule"></span></div>
-    <p class="muted" style="max-width:60ch">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
+    <p class="muted">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
     <div class="askgrid"><div>${form}</div>
       <div><h3 style="font:600 28px var(--disp);color:var(--ink)">Your messages</h3>${rows || `<p class="empty" style="padding-left:0">Nothing sent yet.</p>`}</div></div></section>`;
 }
@@ -948,6 +991,7 @@ document.addEventListener("click", async (e) => {
 
     case "toggle-publish": {
       if (!ev) return;
+      if (!ev.published && !confirm("Publish this event? Every subscriber will get an email.")) return;
       ev.published = !ev.published; render();
       if (await put("events", id, { published: ev.published }, true)) toast(ev.published ? "Published. Everyone can see it, and subscribers are being emailed." : "Moved back to drafts.");
       return;

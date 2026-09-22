@@ -76,14 +76,15 @@ async function sendToAll(subject, html, text) {
   logger.info(`Sent "${subject}" to ${emails.length} subscriber(s).`);
 }
 
+const h = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
 function wrap(title, bodyHtml) {
   const site = SITE_URL.value();
-  return `<div style="font-family:Georgia,serif;background:#0a1c14;color:#ece6d6;padding:28px">
-    <div style="max-width:520px;margin:0 auto;background:#12291d;border:1px solid #c9a55c55;border-radius:14px;padding:26px">
-      <p style="color:#f0c878;font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px">Islamic Society</p>
-      <h1 style="font-size:22px;margin:0 0 14px;color:#f0c878">${title}</h1>
+  return `<div style="font-family:Georgia,serif;background:#f4f0e6;color:#293225;padding:28px">
+    <div style="max-width:520px;margin:0 auto;background:#fbf9f3;border:1px solid #d9cdb4;border-radius:9px;padding:26px">
+      <h1 style="font-size:22px;margin:0 0 14px;color:#293225">${h(title)}</h1>
       <div style="font-size:14px;line-height:1.6">${bodyHtml}</div>
-      <p style="margin-top:24px"><a href="${site}" style="color:#f0c878">Open the hub →</a></p>
+      <p style="margin-top:24px"><a href="${site}" style="color:#8f6f38">Open the hub</a></p>
     </div></div>`;
 }
 
