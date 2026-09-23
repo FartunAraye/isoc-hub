@@ -319,3 +319,1343 @@ textarea.field{min-height:110px;resize:vertical}
 }
 
 .sec-head h2,.calmonth,.block-h h3,.mpanel h2{color:var(--ink)}
+
+
+/* ============================================================
+   ISOC — SWISS / APPLE VISUAL SYSTEM
+   ============================================================ */
+
+:root {
+  /* Brand palette */
+  --white: #ffffff;
+  --black: #0f0f0f;
+  --charcoal: #222222;
+  --gold: #c49a2e;
+  --green: #369b63;
+  --deep-green: #0e3b2e;
+  --cream: #f6f2eb;
+
+  /* Existing app variables overridden */
+  --bg: #ffffff;
+  --bg2: #f6f2eb;
+  --panel: #ffffff;
+  --panel2: #f6f2eb;
+
+  --ink: #0f0f0f;
+  --muted: #707070;
+
+  --line: #e7e7e7;
+  --line-br: #d8d8d8;
+
+  --amber: #0e3b2e;
+  --good: #369b63;
+  --bad: #b74040;
+  --warn: #c49a2e;
+
+  /* Helvetica / Swiss typography */
+  --disp: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --radius: 16px;
+}
+
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--white);
+  color: var(--black);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+
+.wrap {
+  max-width: 1120px;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+
+::selection {
+  background: var(--deep-green);
+  color: var(--white);
+}
+
+a {
+  color: inherit;
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.wrap--bar {
+  padding-top: 20px;
+}
+
+.top {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #ededed;
+}
+
+.brand {
+  gap: 12px;
+}
+
+.emblem {
+  width: 32px;
+  height: 32px;
+  color: var(--black);
+}
+
+.brand-name {
+  font-family: var(--body);
+  font-size: 18px;   /* was 15px */
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  margin-top: 2px;
+  color: #777;
+  font-size: 12px;   /* was 10px */
+  letter-spacing: 0;
+}
+
+.top-right {
+  gap: 12px;
+}
+
+.hijri {
+  color: #8a8a8a;
+  font-size: 13px;   /* was 11px */
+}
+
+.who {
+  color: #777;
+  font-size: 13px;
+}
+
+
+/* notification */
+
+.icon-round {
+  width: 36px;
+  height: 36px;
+
+  border: 1px solid #e7e7e7;
+  border-radius: 50%;
+
+  background: var(--white);
+  color: var(--black);
+
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.icon-round:hover {
+  background: #f5f5f5;
+  border-color: #d5d5d5;
+}
+
+.icon-round .on {
+  background: var(--green);
+  box-shadow: none;
+}
+
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.nav {
+  margin-top: 14px;
+  gap: 32px;
+  border-bottom: none;
+}
+
+.navbtn {
+  margin: 0;
+  padding: 14px 0 17px;
+
+  font-size: 15px;      /* was 12px */
+  font-weight: 500;
+  letter-spacing: -0.015em;
+
+  color: #777;
+
+  transition: color 150ms ease;
+}
+
+.navbtn:hover {
+  color: var(--black);
+}
+
+.navbtn::after {
+  left: 0;
+  right: auto;
+  bottom: 6px;
+
+  width: 0;
+  height: 1.5px;
+
+  background: var(--black);
+
+  transition: width 180ms ease;
+}
+
+.navbtn.is-on {
+  color: var(--black);
+  font-weight: 600;
+}
+
+.navbtn.is-on::after {
+  width: 100%;
+  background: var(--black);
+}
+
+.badge {
+  background: var(--deep-green);
+}
+
+
+/* ============================================================
+   HERO
+   ============================================================ */
+
+/*
+   The old site uses hero-bg.jpg as a full-page background.
+   For the new direction, the homepage is deliberately mostly white.
+*/
+
+.hero-bleed {
+  width: 100%;
+  min-height: 570px;
+
+  display: flex;
+  justify-content: center;
+
+  padding:
+    110px
+    max(32px, calc((100vw - 1120px) / 2 + 32px))
+    105px;
+
+  background: var(--white);
+  color: var(--black);
+
+  border-bottom: 1px solid #ededed;
+}
+
+.hero-in {
+  width: 100%;
+  max-width: 1120px;
+}
+
+
+/* small Islamic detail rather than decorative theme */
+
+.hero-in .bismillah {
+  display: inline-block;
+
+  margin-bottom: 34px;
+
+  font-family: "Amiri", serif;
+  font-size: 18px;
+  font-weight: 400;
+
+  color: var(--deep-green);
+
+  letter-spacing: 0;
+}
+
+
+/* oversized Swiss headline */
+
+.hero-bleed h1 {
+  max-width: 850px;
+
+  font-family: var(--body);
+  font-size: clamp(58px, 8.5vw, 108px);
+  font-weight: 700;
+  line-height: 0.9;
+
+  letter-spacing: -0.065em;
+
+  color: var(--black);
+
+  text-shadow: none;
+}
+
+.hero-bleed .lead {
+  max-width: 440px;
+
+  margin-top: 32px;
+
+  color: #686868;
+
+  font-size: 18px;
+  line-height: 1.45;
+  letter-spacing: -0.025em;
+}
+
+.hero-bleed .cta {
+  margin-top: 42px;
+  gap: 10px;
+}
+
+
+/* remove previous white hero button styling */
+
+.hero-bleed .cta .btn {
+  color: var(--black);
+  border-color: #dcdcdc;
+}
+
+.hero-bleed .cta .btn.amber {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--white);
+}
+
+.hero-bleed .cta .btn:hover {
+  background: #f3f3f3;
+}
+
+.hero-bleed .cta .btn.amber:hover {
+  background: var(--deep-green);
+  border-color: var(--deep-green);
+}
+
+
+/* small scroll indicator */
+
+.hero-more {
+  bottom: 24px;
+  color: var(--black);
+  opacity: 0.25;
+}
+
+.hero-more .ico {
+  width: 18px;
+  height: 18px;
+}
+
+
+/* quieter animation */
+
+.hero-in > * {
+  animation-duration: 0.55s;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.btn {
+  min-height: 40px;
+
+  padding: 0 18px;
+
+  border: 1px solid #dedede;
+  border-radius: 999px;
+
+  background: var(--white);
+  color: var(--black);
+
+  font-size: 12px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.btn:hover {
+  background: #f4f4f4;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn.amber {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--white);
+
+  font-weight: 600;
+}
+
+.btn.amber:hover {
+  background: var(--deep-green);
+  border-color: var(--deep-green);
+}
+
+.btn.small {
+  min-height: 34px;
+  padding: 0 14px;
+}
+
+
+/* ============================================================
+   SECTION SYSTEM
+   ============================================================ */
+
+.sec {
+  padding-top: 96px;
+}
+
+.sec-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+
+  gap: 30px;
+
+  margin-bottom: 30px;
+
+  align-items: end;
+}
+
+.sec-head h2,
+.calmonth,
+.block-h h3,
+.mpanel h2 {
+  font-family: var(--body);
+
+  font-weight: 650;
+  letter-spacing: -0.045em;
+
+  color: var(--black);
+}
+
+.sec-head h2 {
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1;
+}
+
+.rule {
+  width: 80px;
+  height: 1px;
+  margin-bottom: 7px;
+
+  background: var(--black);
+}
+
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.card {
+  border: 1px solid #e6e6e6;
+  border-radius: 18px;
+
+  background: var(--white);
+
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 10px 30px rgba(0, 0, 0, 0.025);
+}
+
+.card.pad {
+  padding: 24px;
+}
+
+
+/* ============================================================
+   NEXT EVENT
+   ============================================================ */
+
+.sec--next {
+  justify-content: flex-start;
+  padding-top: 72px;
+}
+
+
+/*
+   Convert the previous pointed-arch event card into an Apple-style
+   information card, while keeping all the existing JS intact.
+*/
+
+.sec--next .arch-frame {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.arch {
+  width: 100%;
+
+  aspect-ratio: auto;
+  min-height: 320px;
+
+  clip-path: none;
+
+  border-radius: 24px;
+
+  background: var(--deep-green);
+
+  box-shadow: none;
+
+  overflow: hidden;
+}
+
+.arch::before {
+  display: none;
+}
+
+.arch-in {
+  max-width: 760px;
+
+  align-items: flex-start;
+  justify-content: flex-end;
+
+  padding: 45px;
+
+  text-align: left;
+
+  color: var(--white);
+}
+
+.nextlbl {
+  margin-bottom: 36px;
+
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+
+  color: rgba(255, 255, 255, 0.55);
+
+  text-shadow: none;
+}
+
+.dayn {
+  display: inline;
+
+  font-family: var(--body);
+  font-size: 14px;
+  font-weight: 500;
+
+  color: rgba(255,255,255,.65);
+
+  text-shadow: none;
+}
+
+.mon {
+  display: inline;
+
+  margin-left: 3px;
+
+  color: rgba(255,255,255,.65);
+
+  font-size: 14px;
+
+  letter-spacing: 0;
+  text-transform: none;
+
+  text-shadow: none;
+}
+
+.arch h3 {
+  margin: 10px 0 4px;
+
+  max-width: 620px;
+
+  font-family: var(--body);
+  font-size: clamp(34px, 5vw, 56px);
+  font-weight: 650;
+
+  line-height: 1;
+  letter-spacing: -0.05em;
+
+  color: var(--white);
+
+  text-shadow: none;
+}
+
+.when,
+.until {
+  justify-content: flex-start;
+
+  margin-top: 10px;
+
+  color: rgba(255, 255, 255, 0.65);
+
+  font-size: 13px;
+
+  text-shadow: none;
+}
+
+.until {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.arch .btn {
+  margin-top: 20px;
+
+  background: var(--white);
+  border-color: var(--white);
+
+  color: var(--black);
+}
+
+.arch .btn:hover {
+  background: var(--cream);
+}
+
+
+/* empty state */
+
+.arch--empty {
+  padding: 38px;
+
+  border-radius: 20px;
+
+  background: var(--cream);
+}
+
+.arch--empty .arch-in {
+  color: var(--black);
+}
+
+.arch--empty h3 {
+  color: var(--black);
+}
+
+
+/* ============================================================
+   WHY JOIN
+   ============================================================ */
+
+.whygrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 12px;
+}
+
+.whycard {
+  min-height: 220px;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 24px;
+
+  border: none;
+  border-radius: 18px;
+
+  background: #f6f6f6;
+
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.whycard:hover {
+  transform: translateY(-2px);
+  background: var(--cream);
+}
+
+.whycard .ico {
+  width: 21px;
+  height: 21px;
+
+  color: var(--deep-green);
+}
+
+.whycard h3 {
+  margin-top: auto;
+  padding-top: 50px;
+
+  font-family: var(--body);
+  font-size: 20px;
+  font-weight: 600;
+
+  letter-spacing: -0.035em;
+}
+
+.whycard p {
+  margin-top: 7px;
+
+  max-width: 30ch;
+
+  color: #777;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+
+/* introduce one branded card without overwhelming the grid 
+
+.whycard:first-child {
+  background: var(--deep-green);
+  color: var(--white);
+}
+
+.whycard:first-child .ico {
+  color: var(--white);
+}
+
+.whycard:first-child p {
+  color: rgba(255,255,255,.65);
+} */
+
+
+/* ============================================================
+   ANNOUNCEMENTS
+   ============================================================ */
+
+.ann {
+  margin-bottom: 0;
+  padding: 22px 0;
+
+  border: none;
+  border-top: 1px solid #e8e8e8;
+  border-radius: 0;
+
+  background: transparent;
+}
+
+.ann:last-child {
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.ann-h {
+  align-items: center;
+}
+
+.ann-h h3 {
+  font-family: var(--body);
+  font-size: 18px;
+  font-weight: 600;
+
+  letter-spacing: -0.025em;
+}
+
+.ann p {
+  max-width: 700px;
+
+  margin-top: 7px;
+
+  color: #777;
+
+  font-size: 13px;
+}
+
+.when-posted {
+  margin-top: 12px;
+
+  color: #aaa;
+}
+
+
+/* ============================================================
+   EVENT LIST
+   ============================================================ */
+
+.prow {
+  grid-template-columns: 60px minmax(0,1fr) auto;
+
+  gap: 20px;
+
+  margin-bottom: 10px;
+  padding: 20px;
+
+  border: 1px solid #e7e7e7;
+  border-radius: 16px;
+
+  background: var(--white);
+
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.prow:hover {
+  background: #fafafa;
+  border-color: #d6d6d6;
+
+  transform: translateY(-1px);
+}
+
+.pdate {
+  text-align: left;
+  color: var(--black);
+}
+
+.pdate b {
+  font-family: var(--body);
+  font-size: 25px;
+  font-weight: 600;
+
+  letter-spacing: -0.04em;
+}
+
+.pdate span {
+  color: #999;
+
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.ptitle {
+  font-size: 15px;
+  font-weight: 600;
+
+  letter-spacing: -0.02em;
+}
+
+.pmeta {
+  margin-top: 5px;
+
+  color: #8a8a8a;
+}
+
+
+/* ============================================================
+   CHIPS
+   ============================================================ */
+
+.chip {
+  padding: 5px 9px;
+
+  border: 1px solid #e5e5e5;
+  border-radius: 999px;
+
+  background: #f7f7f7;
+
+  color: #6f6f6f;
+
+  font-size: 10px;
+}
+
+.chip.new,
+.chip.good {
+  border-color: transparent;
+
+  background: #e8f3ed;
+  color: var(--deep-green);
+}
+
+
+/* ============================================================
+   CALENDAR
+   ============================================================ */
+
+.calbar {
+  margin-top: 52px;
+}
+
+.calmonth {
+  font-size: clamp(32px, 4vw, 48px);
+}
+
+.filters {
+  margin: 24px 0;
+}
+
+.fbtn {
+  padding: 8px 14px;
+
+  border: 1px solid #e5e5e5;
+  border-radius: 999px;
+
+  background: var(--white);
+
+  color: #707070;
+
+  font-size: 11px;
+}
+
+.fbtn:hover {
+  border-color: #cfcfcf;
+  color: var(--black);
+}
+
+.fbtn.is-on {
+  border-color: var(--black);
+
+  background: var(--black);
+  color: var(--white);
+}
+
+.grid {
+  gap: 6px;
+}
+
+.dow {
+  color: #999;
+
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.day {
+  min-height: 95px;
+
+  border: 1px solid #ededed;
+  border-radius: 12px;
+
+  background: var(--white);
+}
+
+.day.today {
+  border-color: var(--black);
+  box-shadow: none;
+}
+
+.dn {
+  color: #777;
+}
+
+.pill {
+  border-radius: 6px;
+
+  background: #f3f3f3;
+
+  color: var(--black);
+}
+
+.pill .dot {
+  background: var(--deep-green);
+}
+
+
+/* ============================================================
+   FORM ELEMENTS
+   ============================================================ */
+
+.field {
+  min-height: 46px;
+
+  padding: 0 14px;
+
+  border: 1px solid #dedede;
+  border-radius: 12px;
+
+  background: #fafafa;
+
+  color: var(--black);
+
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.field:focus {
+  border-color: var(--black);
+  background: var(--white);
+
+  outline: none;
+}
+
+textarea.field {
+  padding-top: 13px;
+}
+
+.field::placeholder {
+  color: #aaa;
+}
+
+.lbl {
+  margin-top: 18px;
+
+  color: #767676;
+
+  font-size: 11px;
+  font-weight: 500;
+}
+
+
+/* ============================================================
+   ABOUT
+   ============================================================ */
+
+.prose {
+  max-width: 720px;
+
+  color: #555;
+
+  font-size: 17px;
+  line-height: 1.6;
+
+  letter-spacing: -0.02em;
+}
+
+.dolist div {
+  grid-template-columns: minmax(170px, .5fr) 1fr;
+
+  gap: 40px;
+
+  padding: 20px 0;
+
+  border-top: 1px solid #e8e8e8;
+}
+
+.dolist dt {
+  font-family: var(--body);
+
+  font-size: 16px;
+  font-weight: 600;
+
+  letter-spacing: -0.025em;
+}
+
+.dolist dd {
+  max-width: 580px;
+
+  color: #777;
+
+  font-size: 14px;
+}
+
+.faq details {
+  padding: 20px 0;
+
+  border-color: #e8e8e8;
+}
+
+.faq summary {
+  font-size: 15px;
+  font-weight: 550;
+}
+
+.faq details p {
+  max-width: 650px;
+
+  color: #777;
+}
+
+
+/* ============================================================
+   TEAM
+   ============================================================ */
+
+.people {
+  grid-template-columns: repeat(3, minmax(0,1fr));
+
+  gap: 54px 18px;
+}
+
+.face {
+  aspect-ratio: 4 / 5;
+
+  clip-path: none;
+
+  border-radius: 18px;
+
+  background: #f3f3f3;
+}
+
+.face--blank {
+  font-family: var(--body);
+
+  color: #b3b3b3;
+
+  font-size: 30px;
+  font-weight: 500;
+}
+
+.person h3 {
+  margin-top: 14px;
+
+  font-family: var(--body);
+  font-size: 17px;
+  font-weight: 600;
+
+  letter-spacing: -0.025em;
+}
+
+.person .role {
+  margin-top: 3px;
+
+  color: #8a8a8a;
+}
+
+.person .bio {
+  color: #666;
+}
+
+
+/* ============================================================
+   TEAM WORKSPACE / APP UI
+   ============================================================ */
+
+.rowbtn,
+.task,
+.sub-row,
+.member {
+  border-color: #e8e8e8;
+  border-radius: 14px;
+
+  background: var(--white);
+}
+
+.rowbtn {
+  padding: 18px;
+}
+
+.rowbtn:hover {
+  background: #fafafa;
+}
+
+.block-h h3 {
+  font-size: 22px;
+}
+
+.count {
+  border-radius: 999px;
+}
+
+.check {
+  border-radius: 50%;
+}
+
+.task.is-done .check {
+  background: var(--black);
+  border-color: var(--black);
+}
+
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+
+#modal {
+  background: rgba(15,15,15,.32);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.mpanel {
+  max-width: 520px;
+
+  padding: 34px;
+
+  border: 1px solid rgba(255,255,255,.7);
+  border-radius: 22px;
+
+  background: rgba(255,255,255,.96);
+
+  box-shadow: 0 24px 80px rgba(0,0,0,.12);
+}
+
+.mpanel h2 {
+  font-size: 30px;
+}
+
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.foot--full {
+  margin-top: 130px;
+
+  padding: 46px 0 36px;
+
+  border-top: 1px solid #e8e8e8;
+}
+
+.foot-brand .emblem {
+  color: var(--deep-green);
+}
+
+.foot-cols {
+  gap: 80px;
+}
+
+.foot-cols h4 {
+  margin-bottom: 12px;
+
+  font-family: var(--body);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  color: #999;
+
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.foot-cols a {
+  padding: 4px 0;
+
+  color: var(--black);
+
+  font-size: 13px;
+}
+
+.foot-cols a:hover {
+  color: var(--deep-green);
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 800px) {
+
+  .wrap {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .hero-bleed {
+    min-height: 540px;
+
+    padding:
+      90px
+      20px
+      80px;
+  }
+
+  .hero-bleed h1 {
+    font-size: clamp(56px, 15vw, 82px);
+  }
+
+  .whygrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .people {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .arch-in {
+    padding: 32px;
+  }
+
+}
+
+
+@media (max-width: 580px) {
+
+  .top {
+    align-items: flex-start;
+  }
+
+  .hijri {
+    display: none;
+  }
+
+  .nav {
+    gap: 22px;
+  }
+
+  .hero-bleed {
+    min-height: 500px;
+
+    padding-top: 75px;
+  }
+
+  .hero-in .bismillah {
+    margin-bottom: 26px;
+  }
+
+  .hero-bleed h1 {
+    font-size: 56px;
+    line-height: .94;
+
+    letter-spacing: -0.06em;
+  }
+
+  .hero-bleed .lead {
+    margin-top: 25px;
+
+    font-size: 16px;
+  }
+
+  .sec {
+    padding-top: 70px;
+  }
+
+  .sec-head {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .rule {
+    width: 42px;
+  }
+
+  .whygrid {
+    grid-template-columns: 1fr;
+  }
+
+  .whycard {
+    min-height: 190px;
+  }
+
+  .arch {
+    min-height: 370px;
+  }
+
+  .arch-in {
+    padding: 27px;
+  }
+
+  .arch h3 {
+    font-size: 38px;
+  }
+
+  .prow {
+    grid-template-columns: 45px 1fr;
+  }
+
+  .prow > .chip {
+    display: none;
+  }
+
+  .people {
+    grid-template-columns: 1fr;
+  }
+
+  .foot-top {
+    flex-direction: column;
+  }
+
+  .foot-cols {
+    gap: 55px;
+  }
+
+} 
