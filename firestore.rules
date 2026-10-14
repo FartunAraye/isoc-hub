@@ -15,6 +15,22 @@ service cloud.firestore {
       allow write: if isTeam();
     }
 
+    // Public position details; editing follows existing team permissions.
+    match /positions/{positionId} {
+      allow read: if true;
+      allow create, update: if isTeam()
+        && positionId.matches('position-([0-4]|1[0-4])')
+        && request.resource.data.keys().hasAll(["role", "name", "blurb"])
+        && request.resource.data.keys().hasOnly(["role", "name", "blurb"])
+        && request.resource.data.role is string
+        && request.resource.data.role.size() > 0
+        && request.resource.data.role.size() <= 80
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.blurb is string
+        && request.resource.data.blurb.size() <= 500;
+    }
+
     // Workspace (tasks / budget / notes per event): team only, both ways.
     match /workspace/{eventId} {
       allow read, write: if isTeam();

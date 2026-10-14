@@ -156,3 +156,17 @@ is correct.
 - Want to change the colours? They're CSS variables at the top of
   `style.css` (`--bg`, `--gold`, `--gold-br`, `--amber`, plus one accent
   colour per event category further down).
+
+## Update public team positions
+
+Sign in with an authorised team account, open **Our team**, and select
+**Edit position** on a card. Update the position title, name and optional bio,
+then save. Leave the name empty to show ?Not announced yet?. Photos are no
+longer displayed. Changes are stored in the public `positions` collection;
+only existing team members can write to it. Editing public positions does
+not grant anyone account access. Deploy the updated Firestore rules along
+with the website before using this feature:
+
+```bash
+firebase deploy --only hosting,firestore:rules
+```

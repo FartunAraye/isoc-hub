@@ -28,8 +28,8 @@ const SOCIETY = {
 const ABOUT = {
   title: "About the society",
   intro: [
-    "Islamic Society at the University of Birmingham Dubai is a student-led community for Muslims and anyone interested in learning more about Islam. We aim to create a welcoming space where students can connect, learn, practise their faith and take part in activities together.",
-    "We are currently growing our community with new students always welcome to join. Throughout the year, we organise activities, events and opportunities for students to come together and build a stronger sense of community."
+    "The Islamic Society at the University of Birmingham Dubai is a student-led community open to Muslims and anyone interested in learning more about Islam. Our aim is to create a welcoming and inclusive environment where students can connect, reflect, deepen their understanding of Islam and practise their faith together.",
+    "We welcome all students to join our growing community. Throughout the year, we hope to organise a range of events and activities that not only provide opportunities for learning and spiritual reflection, but also bring students together, foster friendships and strengthen our sense of community, insha’Allah."
   ],
   faqs: [
     { q: "How do I find the next event?", a: "Check the Events tab for upcoming activities and events. You can also contact us through the details provided on the Home page if you have any questions." },
@@ -40,18 +40,12 @@ const ABOUT = {
 const TEAM = {
   intro: "Meet the team behind Islamic Society at the University of Birmingham Dubai, working together to build a welcoming space for faith, community and student life.",
   members: [
-    { role: "President",              name: "", photo: "", blurb: "" },
-    { role: "Vice President",         name: "", photo: "", blurb: "" },
-    { role: "Events Lead",            name: "", photo: "", blurb: "" },
-    { role: "Outreach Lead",          name: "", photo: "", blurb: "" },
-    { role: "Marketing Lead",         name: "", photo: "", blurb: "" },
-  
-    { role: "Sisters Representative", name: "", photo: "", blurb: "" },
-    { role: "Brothers Representative",name: "", photo: "", blurb: "" },
-  
-    { role: "Committee Member",       name: "", photo: "", blurb: "" },
-    { role: "Committee Member",       name: "", photo: "", blurb: "" },
-    { role: "Committee Member",       name: "", photo: "", blurb: "" }
+    { id: "position-0", role: "President", name: "Ramla Yusuf", blurb: "" },
+    { id: "position-1", role: "Vice President - Brothers'", name: "Youssef Waly", blurb: "" },
+    { id: "position-10", role: "Vice President - Sisters'", name: "Isra Saeed Aamir", blurb: "" },
+    { id: "position-4", role: "Marketing Lead", name: "Fartun Araye", blurb: "" },
+    { id: "position-2", role: "Events Lead", name: "Manahil Rehan", blurb: "" },
+    { id: "position-3", role: "Outreach Lead", name: "Amna Mohsin Khan", blurb: "" },
   ]
 };
 
@@ -219,13 +213,13 @@ const normWs = (d = {}) => ({
 });
 
 const now0 = new Date();
-const VIEWS = ["home", "about", "calendar", "people", "ask", "team"];
+const VIEWS = ["home", "about", "calendar", "people", "ask", "talk", "team"];
 const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS.includes(v) ? v : "home"; };
 const S = {
   mode: "local",              // "live" once Firebase is configured
   user: null, isTeam: false,
   view: viewFromHash(),
-  events: [], workspace: {}, announcements: [], submissions: [], members: [],
+  events: [], workspace: {}, announcements: [], submissions: [], members: [], positions: {},
   loaded: { events: false },
   month: { y: now0.getFullYear(), m: now0.getMonth() }, cat: "all",
   askKind: "suggestion",
@@ -343,12 +337,12 @@ function gcalUrl(e, when) {
    7. RENDERING
    ===================================================================== */
 const dv = (k) => esc(S.drafts[k] || "");
-const emblem = () => `<svg class="emblem" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22.5" fill="none" stroke="currentColor" stroke-width="1"/><g fill="none" stroke="currentColor" stroke-width="1.5"><rect x="13" y="13" width="22" height="22"/><rect x="13" y="13" width="22" height="22" transform="rotate(45 24 24)"/></g><circle cx="24" cy="24" r="3.6" fill="currentColor"/></svg>`;
+const emblem = () => `<img class="emblem" src="logo.jpeg" alt="Islamic Society logo" width="48" height="48">`;
 const lantern = () => `<svg class="lantern" viewBox="0 0 64 130" aria-hidden="true"><line x1="32" y1="0" x2="32" y2="46" stroke="currentColor" stroke-width="1.5"/><path d="M22 46h20l5 10v34c0 8-7 14-15 14s-15-6-15-14V56z" fill="rgba(240,200,120,.14)" stroke="currentColor" stroke-width="1.6"/><path d="M19 66h26M19 92h26" stroke="currentColor" stroke-width="1.2"/><circle cx="32" cy="79" r="7" fill="#f0c878"/><path d="M32 104v16" stroke="currentColor" stroke-width="1.2"/><circle cx="32" cy="123" r="3" fill="currentColor"/></svg>`;
 
 function render() {
   if (S.view === "team" && !S.isTeam) S.view = "home";
-  const views = { home: homeHtml, about: aboutHtml, calendar: calendarHtml, people: peopleHtml, ask: askHtml, team: teamHtml };
+  const views = { home: homeHtml, about: aboutHtml, calendar: calendarHtml, people: peopleHtml, ask: askHtml, talk: talkHtml, team: teamHtml };
   const isHome = S.view === "home";
   $("#app").innerHTML = `<div class="wrap wrap--bar">${headerHtml()}${navHtml()}</div>
     ${isHome ? heroHtml() : ""}
@@ -366,6 +360,7 @@ function render() {
             <div><h4>Connect</h4>
               ${SOCIETY.instagram ? `<a href="${esc(SOCIETY.instagram)}" target="_blank" rel="noopener">Instagram</a>` : ""}
               <a href="#ask" data-act="nav" data-v="ask">Ask &amp; suggest</a>
+              <a href="#talk" data-act="nav" data-v="talk">Host a talk</a>
             </div>
           </div>
         </div>
@@ -390,7 +385,7 @@ function headerHtml() {
 }
 
 function navHtml() {
-  const tabs = [["home", "Home"], ["about", "About us"], ["calendar", "Events"], ["people", "Our team"], ["ask", "Ask & suggest"]];
+  const tabs = [["home", "Home"], ["about", "About us"], ["calendar", "Events"], ["people", "Our team"], ["ask", "Ask & suggest"], ["talk", "Host a talk"]];
   if (S.isTeam) tabs.push(["team", "Workspace"]);
   const n = unread();
   return `<nav class="nav" aria-label="Main">${tabs.map(([k, l]) => `<button class="navbtn${S.view === k ? " is-on" : ""}" data-act="nav" data-v="${k}">${l}${k === "home" && n && S.view !== "home" ? `<span class="badge">${n}</span>` : ""}</button>`).join("")}</nav>`;
@@ -481,54 +476,50 @@ function aboutHtml() {
     <div class="sec-head"><h2>${esc(ABOUT.title)}</h2><span class="rule"></span></div>
     <div class="prose">${ABOUT.intro.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
 
-    <div class="sec-head" style="margin-top:40px"><h2>What we do</h2><span class="rule"></span></div>
-    <dl class="dolist">${Object.values(CATS).map((c) => `<div><dt>${esc(c.label)}</dt><dd>${esc(c.desc)}</dd></div>`).join("")}</dl>
-
     <div class="sec-head" style="margin-top:40px"><h2>Good to know</h2><span class="rule"></span></div>
     <div class="faq">${ABOUT.faqs.map((f, i) => `<details data-faq="${i}"${S.openFaq.has(i) ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
   </section>`;
 }
 
-const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+// Stable IDs preserve saved edits when leadership positions are reordered.
+const teamPositions = () => TEAM.members.map(p => ({
+  ...p, ...S.positions[p.id], id: p.id, group: p.group || "Leadership Team"
+}));
 
 function personHtml(p) {
-  const named = !!p.name;
-  const face = p.photo
-    ? `<img class="face" src="${esc(p.photo)}" alt="" width="400" height="480" loading="lazy">`
-    : `<div class="face face--blank" aria-hidden="true">${named ? esc(initials(p.name)) : ""}</div>`;
-  return `<article class="person">${face}
-    <h3>${esc(named ? p.name : p.role)}</h3>
-    <p class="role">${named ? esc(p.role) : "Not announced yet"}</p>
-    ${p.blurb ? `<p class="bio">${esc(p.blurb)}</p>` : ""}</article>`;
+  return `<article class="person">
+    <p class="role">${esc(p.role)}</p>
+    <h3>${esc(p.name || "Not announced yet")}</h3>
+    ${p.blurb ? `<p class="bio">${esc(p.blurb)}</p>` : ""}
+    ${S.isTeam ? `<button class="btn position-edit" data-act="edit-position" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name || p.role)}">Edit position</button>` : ""}
+  </article>`;
 }
 
 function peopleHtml() {
+  const positions = teamPositions();
   return `<section class="sec">
     <div class="sec-head"><h2>Our team</h2><span class="rule"></span></div>
     <p class="muted">${esc(TEAM.intro)}</p>
-
-    <div class="sec-head" style="margin-top:40px">
-      <h2>Executive Committee</h2><span class="rule"></span>
-    </div>
-    <div class="people">${TEAM.members.filter(p =>
-      ["President", "Vice President", "Events Lead", "Marketing Lead", "Outreach Lead"].includes(p.role)
-    ).map(personHtml).join("")}</div>
-
-    <div class="sec-head" style="margin-top:40px">
-      <h2>Representatives</h2><span class="rule"></span>
-    </div>
-    <div class="people">${TEAM.members.filter(p =>
-      ["Sisters Representative", "Brothers Representative"].includes(p.role)
-    ).map(personHtml).join("")}</div>
-
-    <div class="sec-head" style="margin-top:40px">
-      <h2>Committee Members</h2><span class="rule"></span>
-    </div>
-    <div class="people">${TEAM.members.filter(p =>
-      !["President", "Vice President", "Events Lead", "Marketing Lead", "Outreach Lead",
-        "Sisters Representative", "Brothers Representative"].includes(p.role)
-    ).map(personHtml).join("")}</div>
+    ${S.isTeam ? `<p class="muted">Use Edit position to update a title, name or bio. Saved changes are visible to everyone.</p>` : ""}
+    ${["Leadership Team"].map(group => `
+      <div class="sec-head" style="margin-top:40px"><h2>${group}</h2><span class="rule"></span></div>
+      <div class="people">${positions.filter(p => p.group === group).map(personHtml).join("")}</div>
+    `).join("")}
   </section>`;
+}
+
+function positionModal() {
+  if (!S.isTeam) return "";
+  const p = teamPositions().find(p => p.id === S.modal.id);
+  if (!p) return "";
+  return `<h2>Edit position</h2>
+    <form data-form="position" data-id="${esc(p.id)}" class="position-form">
+      <label>Position title<input class="field" name="role" value="${esc(p.role)}" required maxlength="80"></label>
+      <label>Name<input class="field" name="name" value="${esc(p.name)}" maxlength="100" placeholder="Not announced yet"></label>
+      <label>Short bio<textarea class="field" name="blurb" maxlength="500" rows="4">${esc(p.blurb)}</textarea></label>
+      <p class="muted">Leave the name empty if this position has not been announced.</p>
+      <div class="mactions"><button class="btn amber" type="submit">Save changes</button><button class="btn" type="button" data-act="close-modal">Cancel</button></div>
+    </form>`;
 }
 
 /* ---------- calendar ---------- */
@@ -583,7 +574,31 @@ function askHtml() {
   return `<section class="sec"><div class="sec-head"><h2>Ask &amp; suggest</h2><span class="rule"></span></div>
     <p class="muted">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
     <div class="askgrid"><div>${form}</div>
-      <div><h3 style="font:600 28px var(--disp);color:var(--ink)">Your messages</h3>${rows || `<p class="empty" style="padding-left:0">Nothing sent yet.</p>`}</div></div></section>`;
+      <section class="ask-messages" aria-labelledby="your-messages-heading"><h3 id="your-messages-heading">Your messages</h3>${rows || `<p class="empty">Nothing sent yet.</p>`}</section></div></section>`;
+}
+
+/* ---------- talk applications ---------- */
+function talkHtml() {
+  return `<section class="sec">
+    <div class="sec-head"><h2>Apply to host a talk</h2><span class="rule"></span></div>
+    <p class="muted">Have something to share? Tell us about your proposed talk and how we can contact you.</p>
+    <form data-form="talk" style="max-width:640px">
+      <label class="lbl" for="talk-title">Talk title</label>
+      <input class="field" id="talk-title" name="title" required maxlength="120" data-draft="talk-title" value="${dv("talk-title")}">
+      <label class="lbl" for="talk-overview">Brief overview</label>
+      <textarea class="field" id="talk-overview" name="overview" required maxlength="2000" data-draft="talk-overview">${dv("talk-overview")}</textarea>
+      <label class="lbl" for="talk-date">Preferred date</label>
+      <input class="field" id="talk-date" name="date" type="date" required data-draft="talk-date" value="${dv("talk-date")}">
+      <label class="lbl" for="talk-venue">Preferred venue (optional)</label>
+      <input class="field" id="talk-venue" name="venue" maxlength="160" data-draft="talk-venue" value="${dv("talk-venue")}">
+      <label class="lbl" for="talk-email">Your email</label>
+      <input class="field" id="talk-email" name="email" type="email" autocomplete="email" required maxlength="254" data-draft="talk-email" value="${dv("talk-email")}">
+      <label class="lbl" for="talk-whatsapp">WhatsApp number</label>
+      <input class="field" id="talk-whatsapp" name="whatsapp" type="tel" autocomplete="tel" required maxlength="40" placeholder="Include your country code, e.g. +971" data-draft="talk-whatsapp" value="${dv("talk-whatsapp")}">
+      <p class="muted small">Your application will be emailed to the Islamic Society team.</p>
+      <div class="mactions"><button class="btn amber" type="submit">Send application</button></div>
+    </form>
+  </section>`;
 }
 
 /* ---------- team ---------- */
@@ -715,6 +730,7 @@ function renderModal() {
   let inner = "";
   if (S.modal.type === "event") inner = eventModal();
   else if (S.modal.type === "edit") inner = editModal();
+  else if (S.modal.type === "position") inner = positionModal();
   else if (S.modal.type === "notify") inner = notifyModal();
   if (!inner) { S.modal = null; return renderModal(); }
   el.innerHTML = `<div class="mpanel" data-stop="1">${closeBtn()}${inner}</div>`;
@@ -867,6 +883,11 @@ function subscribe() {
   S.loaded.events = false; firstAnn = true;
   const onErr = (what) => (err) => { console.error(what, err); toast(`Couldn't load ${what}. Check your connection.`); };
 
+  unsubs.push(onSnapshot(collection(db, "positions"), (snap) => {
+    S.positions = Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
+    refresh();
+  }, onErr("team positions")));
+
   const evQ = S.isTeam ? collection(db, "events") : query(collection(db, "events"), where("published", "==", true));
   unsubs.push(onSnapshot(evQ, (snap) => {
     S.events = snap.docs.map((d) => normEvent(d.id, d.data()));
@@ -922,6 +943,7 @@ async function seedDb() {
 }
 
 async function afterAuth(u) {
+  if (S.modal?.type === "position") closeModal();
   S.user = u; S.isTeam = false; S.submissions = []; S.workspace = {}; S.members = [];
   if (u) {
     try { await getDoc(doc(db, "workspace", "_probe")); S.isTeam = true; } catch { S.isTeam = false; }
@@ -959,6 +981,11 @@ document.addEventListener("click", async (e) => {
       return;
     case "sign-out": if (S.mode === "live") signOut(auth); return;
 
+    case "edit-position":
+      if (!S.isTeam) return;
+      openModal({ type: "position", id });
+      $("#modal input")?.focus();
+      return;
     case "open-event": return openModal({ type: "event", id, t: el.dataset.t || "" });
     case "new-event": return openModal({ type: "edit", id: "" });
     case "edit-event": return openModal({ type: "edit", id });
@@ -1037,6 +1064,25 @@ document.addEventListener("submit", async (e) => {
   const clean = (v) => String(v ?? "").trim();
 
   switch (form.dataset.form) {
+    case "position": {
+      if (!S.isTeam) return toast("Please sign in with a team account to edit positions.");
+      if (!teamPositions().some(p => p.id === id)) return;
+      const data = { role: clean(fd.get("role")), name: clean(fd.get("name")), blurb: clean(fd.get("blurb")) };
+      if (!data.role || data.role.length > 80 || data.name.length > 100 || data.blurb.length > 500) return toast("Please check the position details.");
+      const button = form.querySelector('[type="submit"]');
+      if (button.disabled) return;
+      button.disabled = true; button.textContent = "Saving...";
+      const saved = await put("positions", id, data);
+      if (saved) {
+        S.positions[id] = data;
+        if (S.modal?.type === "position" && S.modal.id === id) closeModal();
+        render();
+        toast(S.mode === "local" ? "Updated for this demo only." : "Position updated.");
+      } else {
+        button.disabled = false; button.textContent = "Save changes";
+      }
+      return;
+    }
     case "ask": {
       const text = clean(fd.get("text"));
       if (!text) return;
@@ -1047,6 +1093,33 @@ document.addEventListener("submit", async (e) => {
       const { id: sid, ...data } = sub;
       if (await put("submissions", sid, data)) toast("Jazakum Allahu khayran. The team has received it.");
       else { S.submissions = S.submissions.filter((x) => x.id !== sid); render(); }
+      return;
+    }
+    case "talk": {
+      if (!form.reportValidity()) return;
+      const title = clean(fd.get("title")), overview = clean(fd.get("overview"));
+      const date = clean(fd.get("date")), venue = clean(fd.get("venue"));
+      const email = clean(fd.get("email")), whatsapp = clean(fd.get("whatsapp"));
+      if (!title || !overview || !date || !email || !whatsapp) return toast("Please fill in all required fields.");
+      const button = form.querySelector('[type="submit"]');
+      if (button.disabled) return;
+      button.disabled = true; button.textContent = "Sending...";
+      try {
+        const response = await fetch("/api/talk-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, overview, date, venue, email, whatsapp })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "We could not send your application.");
+        for (const key of ["title", "overview", "date", "venue", "email", "whatsapp"]) delete S.drafts["talk-" + key];
+        form.reset();
+        toast(result.message);
+      } catch (error) {
+        toast(error.message || "We could not send your application. Please try again.");
+      } finally {
+        button.disabled = false; button.textContent = "Send application";
+      }
       return;
     }
     case "subscribe": {
