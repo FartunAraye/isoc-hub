@@ -1,3 +1,12 @@
+## Talk applications
+
+The Host a talk form collects full name and student ID first, followed by title,
+overview, preferred date, optional venue, email and WhatsApp number. Sign-in is required. Applications save
+to the existing submissions collection and appear in Workspace > Inbox as
+Talk application. The team can reply and archive using the existing controls.
+Applicants see their own applications and replies on Host a talk.
+No Google Form or external email backend is used.
+
 # Islamic Society Hub
 
 A public event calendar + team workspace, styled deep green and gold.

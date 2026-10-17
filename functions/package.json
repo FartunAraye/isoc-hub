@@ -1,7 +1,9 @@
 {
   "name": "isoc-hub-functions",
   "description": "Email notifications for the Islamic Society hub",
-  "engines": { "node": "20" },
+  "engines": {
+    "node": "20"
+  },
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^12.1.0",
