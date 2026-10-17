@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, setDoc, getDoc, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, getDoc, getDocs, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* =====================================================================
    1. CONFIG. Paste your Firebase web config here (Project settings > Your apps > Web app).
@@ -22,8 +22,9 @@ const SOCIETY = {
   sub: "University of Birmingham Dubai",
   tagline: "Faith, friendship and good company.",
   joinUrl: "",   // paste your sign-up link; leave "" to hide the Join button
-  instagram: ""     // full URL; leave "" to hide the footer link
+  instagram: "https://www.instagram.com/uobdisoc/"     // full URL; leave "" to hide the footer link
 };
+
 
 const ABOUT = {
   title: "About the society",
@@ -53,12 +54,36 @@ const TEAM = {
 // actually true of your society this year. Icons are any #i-* id from the
 // sprite in index.html (i-crescent, i-book, i-heart, i-lantern, i-star, i-target, ...).
 const WHY = [
-  { icon: "i-crescent", title: "Community",   body: "Meet people from every course and background. Socials and study sessions where friendships start." },
-  { icon: "i-book",     title: "Faith",        body: "Weekly reflection, tajweed and hifz sessions, and a prayer room you can drop into any time." },
-  { icon: "i-heart",    title: "Support",      body: "New to the university, or just having a hard week? The committee and members are a message away." },
-  { icon: "i-lantern",  title: "Social life",  body: "Chai chats, movie nights and the Eid carnival. No experience or background needed, just come along." },
-  { icon: "i-star",     title: "Learning",     body: "Guest speakers and workshops that treat seeking knowledge as its own act of worship." },
-  { icon: "i-target",   title: "Charity",      body: "Bake sales, fundraising weeks and the Fastathon: giving back together." }
+  {
+    "icon": "i-crescent",
+    "title": "Community",
+    "body": "A welcoming community across courses and backgrounds, with a shared sense of belonging."
+  },
+  {
+    "icon": "i-book",
+    "title": "Faith",
+    "body": "A space to reflect on Islam and the place of faith in everyday university life."
+  },
+  {
+    "icon": "i-heart",
+    "title": "Support",
+    "body": "Kindness, understanding and care for one another through the ups and downs of student life."
+  },
+  {
+    "icon": "i-lantern",
+    "title": "Social life",
+    "body": "Friendship, good company and connections that make university feel more like home."
+  },
+  {
+    "icon": "i-star",
+    "title": "Learning",
+    "body": "Curiosity, thoughtful conversations and a shared appreciation for seeking knowledge."
+  },
+  {
+    "icon": "i-target",
+    "title": "Charity",
+    "body": "Compassion, generosity and a commitment to caring for others and the wider community."
+  }
 ];
 
 /* =====================================================================
@@ -357,6 +382,9 @@ function render() {
               <a href="#calendar" data-act="nav" data-v="calendar">Events</a>
               <a href="#people" data-act="nav" data-v="people">Our team</a>
             </div>
+            <div><h4>Contact us</h4>
+              <a href="mailto:uobdisoc@gmail.com">uobdisoc@gmail.com</a>
+            </div>
             <div><h4>Connect</h4>
               ${SOCIETY.instagram ? `<a href="${esc(SOCIETY.instagram)}" target="_blank" rel="noopener">Instagram</a>` : ""}
               <a href="#ask" data-act="nav" data-v="ask">Ask &amp; suggest</a>
@@ -450,7 +478,7 @@ function annHtml(a) {
 function subscribeHtml() {
   return `<section class="sec"><div class="sec-head"><h2>Email updates</h2><span class="rule"></span></div>
     <div class="card pad" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-      <p class="muted small" style="max-width:44ch;margin:0;display:flex;gap:8px;align-items:flex-start">${ico("i-mail")}<span>Get an email when a new event is published or the team posts something. No account needed.</span></p>
+      <p class="muted small" style="max-width:44ch;margin:0;display:flex;gap:8px;align-items:flex-start">${ico("i-mail")}<span>Get event updates emailed by the society team. No account needed.</span></p>
       <form data-form="subscribe" style="display:flex;gap:8px;flex:1;min-width:220px;max-width:360px">
         <input class="field" type="email" name="email" required placeholder="you@example.com" aria-label="Email address">
         <button class="btn amber" type="submit">Subscribe</button>
@@ -476,7 +504,7 @@ function aboutHtml() {
     <div class="sec-head"><h2>${esc(ABOUT.title)}</h2><span class="rule"></span></div>
     <div class="prose">${ABOUT.intro.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
 
-    <div class="sec-head" style="margin-top:40px"><h2>Good to know</h2><span class="rule"></span></div>
+    <div class="sec-head" style="margin-top:40px"><h2>Frequently asked questions</h2><span class="rule"></span></div>
     <div class="faq">${ABOUT.faqs.map((f, i) => `<details data-faq="${i}"${S.openFaq.has(i) ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
   </section>`;
 }
@@ -559,7 +587,7 @@ function calendarHtml() {
 
 /* ---------- ask & suggest ---------- */
 function askHtml() {
-  const mine = S.submissions.filter((s) => S.user && s.uid === S.user.uid).sort((a, b) => b.createdAt - a.createdAt);
+  const mine = S.submissions.filter((s) => s.kind !== "talk" && S.user && s.uid === S.user.uid).sort((a, b) => b.createdAt - a.createdAt);
   const form = (S.mode === "live" && !S.user)
     ? `<div class="card pad"><p>Sign in with Google to send us a suggestion or a question.</p><div class="mactions"><button class="btn amber" data-act="sign-in">Sign in</button></div></div>`
     : `<form data-form="ask">
@@ -569,7 +597,7 @@ function askHtml() {
         <label class="check-row"><input type="checkbox" name="anon" data-draft="ask-anon" ${S.drafts["ask-anon"] ? "checked" : ""}> Send anonymously</label>
         <p class="muted small" style="margin-top:8px">Anonymous means the team won't see your name in the app. You'll still see any reply below.</p>
         <div class="mactions"><button class="btn amber" type="submit">Send</button></div></form>`;
-  const rows = mine.map((s) => `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "question" ? "Question" : "Suggestion"}</span><span class="chip ${s.status === "answered" ? "good" : "dim"}">${s.status === "answered" ? "Answered" : "Received"}</span></div>
+  const rows = mine.map((s) => `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "talk" ? "Talk application" : s.kind === "question" ? "Question" : "Suggestion"}</span><span class="chip ${s.status === "answered" ? "good" : "dim"}">${s.status === "answered" ? "Answered" : "Received"}</span></div>
       <p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
   return `<section class="sec"><div class="sec-head"><h2>Ask &amp; suggest</h2><span class="rule"></span></div>
     <p class="muted">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
@@ -579,28 +607,24 @@ function askHtml() {
 
 /* ---------- talk applications ---------- */
 function talkHtml() {
-  return `<section class="sec">
-    <div class="sec-head"><h2>Apply to host a talk</h2><span class="rule"></span></div>
+  const mine = S.submissions.filter(s => s.kind === "talk" && S.user && s.uid === S.user.uid).sort((a, b) => b.createdAt - a.createdAt);
+  const form = !S.user
+    ? `<div class="card pad"><p>Sign in with Google to apply to host a talk.</p><button class="btn amber" data-act="sign-in">Sign in</button></div>`
+    : `<form data-form="talk" style="max-width:640px"><label class="lbl" for="talk-fullName">Full name</label><input class="field" id="talk-fullName" name="fullName" type="text" autocomplete="name" maxlength="120" required data-draft="talk-fullName" value="${dv("talk-fullName")}">
+<label class="lbl" for="talk-studentId">Student ID</label><input class="field" id="talk-studentId" name="studentId" type="text" maxlength="40" required data-draft="talk-studentId" value="${dv("talk-studentId")}">
+<label class="lbl" for="talk-title">Talk title</label><input class="field" id="talk-title" name="title" type="text" maxlength="120" required data-draft="talk-title" value="${dv("talk-title")}">
+<label class="lbl" for="talk-overview">Brief overview</label><textarea class="field" id="talk-overview" name="overview" maxlength="2000" required data-draft="talk-overview">${dv("talk-overview")}</textarea>
+<label class="lbl" for="talk-date">Preferred date</label><input class="field" id="talk-date" name="date" type="date" maxlength="10" required data-draft="talk-date" value="${dv("talk-date")}">
+<label class="lbl" for="talk-venue">Preferred venue (optional)</label><input class="field" id="talk-venue" name="venue" type="text" maxlength="160"  data-draft="talk-venue" value="${dv("talk-venue")}">
+<label class="lbl" for="talk-email">Your email</label><input class="field" id="talk-email" name="email" type="email" autocomplete="email" maxlength="254" required data-draft="talk-email" value="${dv("talk-email")}">
+<label class="lbl" for="talk-whatsapp">WhatsApp number</label><input class="field" id="talk-whatsapp" name="whatsapp" type="tel" autocomplete="tel" maxlength="40" placeholder="Include your country code, e.g. +971" required data-draft="talk-whatsapp" value="${dv("talk-whatsapp")}">
+      <div class="mactions"><button class="btn amber" type="submit">Submit application</button></div></form>`;
+  const rows = mine.map(s => `<div class="sub-row"><div class="top-line"><span class="chip">Talk application</span><span class="chip">${esc(s.status === "answered" ? "Answered" : s.status === "archived" ? "Archived" : "Received")}</span></div><p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
+  return `<section class="sec"><div class="sec-head"><h2>Apply to host a talk</h2><span class="rule"></span></div>
     <p class="muted">Have something to share? Tell us about your proposed talk and how we can contact you.</p>
-    <form data-form="talk" style="max-width:640px">
-      <label class="lbl" for="talk-title">Talk title</label>
-      <input class="field" id="talk-title" name="title" required maxlength="120" data-draft="talk-title" value="${dv("talk-title")}">
-      <label class="lbl" for="talk-overview">Brief overview</label>
-      <textarea class="field" id="talk-overview" name="overview" required maxlength="2000" data-draft="talk-overview">${dv("talk-overview")}</textarea>
-      <label class="lbl" for="talk-date">Preferred date</label>
-      <input class="field" id="talk-date" name="date" type="date" required data-draft="talk-date" value="${dv("talk-date")}">
-      <label class="lbl" for="talk-venue">Preferred venue (optional)</label>
-      <input class="field" id="talk-venue" name="venue" maxlength="160" data-draft="talk-venue" value="${dv("talk-venue")}">
-      <label class="lbl" for="talk-email">Your email</label>
-      <input class="field" id="talk-email" name="email" type="email" autocomplete="email" required maxlength="254" data-draft="talk-email" value="${dv("talk-email")}">
-      <label class="lbl" for="talk-whatsapp">WhatsApp number</label>
-      <input class="field" id="talk-whatsapp" name="whatsapp" type="tel" autocomplete="tel" required maxlength="40" placeholder="Include your country code, e.g. +971" data-draft="talk-whatsapp" value="${dv("talk-whatsapp")}">
-      <p class="muted small">Your application will be emailed to the Islamic Society team.</p>
-      <div class="mactions"><button class="btn amber" type="submit">Send application</button></div>
-    </form>
-  </section>`;
+    ${form}
+    ${rows ? `<section style="max-width:640px;margin-top:40px" aria-labelledby="talk-applications-heading"><div class="sec-head"><h2 id="talk-applications-heading">Your applications</h2><span class="rule"></span></div>${rows}</section>` : ""}</section>`;
 }
-
 /* ---------- team ---------- */
 function teamHtml() {
   const newN = S.submissions.filter((s) => s.status === "new").length;
@@ -617,7 +641,7 @@ function teamEventsHtml() {
   const f = [["all", `All (${all.length})`], ["draft", `Drafts (${drafts})`], ["pub", `Published (${all.length - drafts})`]];
   return `<div class="toolbar" style="margin-top:14px"><div class="filters" style="margin:0">${f.map(([k, l]) => `<button class="fbtn${S.evFilter === k ? " is-on" : ""}" data-act="ev-filter" data-f="${k}">${l}</button>`).join("")}</div>
       <button class="btn amber small" data-act="new-event">New event</button></div>
-    <p class="muted small" style="margin-top:10px">Drafts are only visible to the team. Publish an event when it has a date and you're ready for everyone to see it — publishing also emails your subscriber list.</p>
+    <p class="muted small" style="margin-top:10px">Drafts are only visible to the team. Publish an event when it has a date and you're ready for everyone to see it — after publishing, you can draft an email to subscribers.</p>
     ${list.map((e) => {
       const w = S.workspace[e.id], tot = w ? w.tasks.length : 0, done = w ? w.tasks.filter((t) => t.done).length : 0;
       const st = evStart(e);
@@ -656,6 +680,7 @@ function wsHtml(id) {
   return `<div class="wshead"><div><button class="btn small" data-act="back-ws">All events</button></div>
       <div class="wsactions"><button class="btn small" data-act="edit-event" data-id="${q}">Edit details</button>
       <button class="btn small ${ev.published ? "" : "amber"}" data-act="toggle-publish" data-id="${q}">${ev.published ? "Unpublish" : "Publish"}</button>
+      ${ev.published ? `<button type="button" class="btn amber small" data-act="notify-event-email" data-id="${q}">Notify subscribers</button>` : ""}
       <button class="btn small danger" data-act="delete-event" data-id="${q}">Delete</button></div></div>
     <div style="margin-top:6px"><h2 style="font:600 44px/1 var(--disp);color:var(--ink);margin:8px 0 10px">${esc(ev.title)}</h2>
       <div class="kv"><div><span class="chip">${ico(c.icon)}${c.label}</span><span class="chip ${ev.published ? "good" : "dim"}">${ev.published ? "Published" : "Draft"}</span></div>
@@ -687,7 +712,7 @@ function inboxHtml() {
     ${shown.map((s) => {
       const who = s.anonymous ? "Anonymous" : (s.name || "A member");
       const d = new Date(s.createdAt).toLocaleDateString([], { day: "numeric", month: "short" });
-      return `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "question" ? "Question" : "Suggestion"}</span><span class="muted small">${esc(who)}, ${esc(d)}</span>${s.status === "answered" ? '<span class="chip good">Answered</span>' : s.status === "archived" ? '<span class="chip dim">Archived</span>' : ""}</div>
+      return `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "talk" ? "Talk application" : s.kind === "question" ? "Question" : "Suggestion"}</span><span class="muted small">${esc(who)}, ${esc(d)}</span>${s.status === "answered" ? '<span class="chip good">Answered</span>' : s.status === "archived" ? '<span class="chip dim">Archived</span>' : ""}</div>
         <p class="txt">${esc(s.text)}</p>
         ${s.reply ? `<div class="reply"><b>Your reply</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}
         <textarea class="field" style="min-height:70px;margin-top:10px" placeholder="Write a reply (the sender will see it)" data-draft="reply-${esc(s.id)}">${dv("reply-" + s.id)}</textarea>
@@ -731,6 +756,7 @@ function renderModal() {
   if (S.modal.type === "event") inner = eventModal();
   else if (S.modal.type === "edit") inner = editModal();
   else if (S.modal.type === "position") inner = positionModal();
+  else if (S.modal.type === "event-email") inner = eventEmailModal();
   else if (S.modal.type === "notify") inner = notifyModal();
   if (!inner) { S.modal = null; return renderModal(); }
   el.innerHTML = `<div class="mpanel" data-stop="1">${closeBtn()}${inner}</div>`;
@@ -772,6 +798,37 @@ function editModal() {
     <div class="mactions"><button class="btn amber" type="submit">Save</button><button class="btn" type="button" data-act="close-modal">Cancel</button></div></form>`;
 }
 
+async function promptEventEmail(event) {
+  if (!S.isTeam) return;
+  const modal = { type: "event-email", eventId: event.id, drafts: [], count: 0, loading: true };
+  openModal(modal);
+  try {
+    const snapshot = S.mode === "local" ? { docs: [] } : await getDocs(collection(db, "subscribers"));
+    const emails = [...new Set(snapshot.docs.map(d => String(d.data().email || "").trim()).filter(email => /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) && !/[\r\n]/.test(email)))];
+    const when = event.start ? new Date(event.start).toLocaleString("en-GB", { timeZone: "Asia/Dubai", dateStyle: "full", timeStyle: "short" }) + " (Dubai time)" : "Date to be announced";
+    const body = [event.title, when, event.location ? "Venue: " + event.location : "", event.blurb, "View events: " + location.origin + location.pathname + "#calendar", "To stop receiving updates, reply with Unsubscribe."].filter(Boolean).join("\n\n");
+    const drafts = [];
+    for (let i = 0; i < emails.length; i += 20) {
+      const params = new URLSearchParams({ view: "cm", fs: "1", authuser: "uobdisoc@gmail.com", to: "uobdisoc@gmail.com", bcc: emails.slice(i, i + 20).join(","), su: "New event: " + event.title, body });
+      drafts.push("https://mail.google.com/mail/?" + params.toString());
+    }
+    Object.assign(modal, { drafts, count: emails.length, loading: false });
+    if (S.modal === modal) renderModal();
+  } catch (error) {
+    console.error("subscriber email list", error);
+    Object.assign(modal, { loading: false, error: true });
+    if (S.modal === modal) renderModal();
+  }
+}
+function eventEmailModal() {
+  if (!S.isTeam) return "";
+  const { drafts, count } = S.modal;
+  if (S.modal.loading) return `<h2>Notify subscribers?</h2><p role="status">The event is saved. Loading subscribers...</p><button class="btn" data-act="close-modal">Close</button>`;
+  if (S.modal.error) return `<h2>Notify subscribers?</h2><p>The event is saved, but the subscriber list could not be loaded. Check your connection and team permissions.</p><div class="mactions"><button class="btn amber" data-act="notify-event-email" data-id="${esc(S.modal.eventId)}">Try again</button><button class="btn" data-act="close-modal">Close</button></div>`;
+  return `<h2>Notify subscribers?</h2><p>${count ? `${count} subscriber${count === 1 ? "" : "s"} can receive this event.` : "No subscribers yet."}</p>
+    ${count ? `<p class="muted">Open Gmail, sign in to uobdisoc@gmail.com if prompted, check the sender, review the draft and press Send. Subscriber addresses are in BCC.</p>${drafts.length > 1 ? `<p class="muted">Open and send each batch once to notify everyone.</p>` : ""}<div class="mactions">${drafts.map((url, i) => `<a class="btn amber" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open Gmail draft${drafts.length > 1 ? ` ${i + 1} of ${drafts.length}` : ""}</a>`).join("")}</div>` : ""}
+    <div class="mactions"><button class="btn" data-act="close-modal">Close</button></div>`;
+}
 function notifyModal() {
   const supported = "Notification" in window;
   const perm = supported ? Notification.permission : "unsupported";
@@ -1016,11 +1073,15 @@ document.addEventListener("click", async (e) => {
     case "budget-done": return change(id, (w) => { w.budgetDone = !w.budgetDone; S.expB.delete(id); });
     case "toggle-budget-open": S.expB.has(id) ? S.expB.delete(id) : S.expB.add(id); return render();
 
+    case "notify-event-email": if (ev && ev.published && S.isTeam) await promptEventEmail(ev); return;
     case "toggle-publish": {
-      if (!ev) return;
-      if (!ev.published && !confirm("Publish this event? Every subscriber will get an email.")) return;
-      ev.published = !ev.published; render();
-      if (await put("events", id, { published: ev.published }, true)) toast(ev.published ? "Published. Everyone can see it, and subscribers are being emailed." : "Moved back to drafts.");
+      if (!ev || !S.isTeam) return;
+      const published = !ev.published;
+      if (await put("events", id, { published }, true)) {
+        ev.published = published; render();
+        toast(published ? "Event published." : "Moved back to drafts.");
+        if (published) await promptEventEmail(ev);
+      }
       return;
     }
     case "delete-event": {
@@ -1096,29 +1157,30 @@ document.addEventListener("submit", async (e) => {
       return;
     }
     case "talk": {
+      if (!S.user) return toast("Please sign in first.");
       if (!form.reportValidity()) return;
-      const title = clean(fd.get("title")), overview = clean(fd.get("overview"));
-      const date = clean(fd.get("date")), venue = clean(fd.get("venue"));
-      const email = clean(fd.get("email")), whatsapp = clean(fd.get("whatsapp"));
-      if (!title || !overview || !date || !email || !whatsapp) return toast("Please fill in all required fields.");
+      const application = {};
+      for (const key of ["fullName", "studentId", "title", "overview", "date", "venue", "email", "whatsapp"]) application[key] = clean(fd.get(key));
+      if (Object.entries(application).some(([key, value]) => key !== "venue" && !value)) return toast("Please complete all required fields.");
       const button = form.querySelector('[type="submit"]');
       if (button.disabled) return;
-      button.disabled = true; button.textContent = "Sending...";
-      try {
-        const response = await fetch("/api/talk-requests", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, overview, date, venue, email, whatsapp })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || "We could not send your application.");
-        for (const key of ["title", "overview", "date", "venue", "email", "whatsapp"]) delete S.drafts["talk-" + key];
-        form.reset();
-        toast(result.message);
-      } catch (error) {
-        toast(error.message || "We could not send your application. Please try again.");
-      } finally {
-        button.disabled = false; button.textContent = "Send application";
+      button.disabled = true; button.textContent = "Submitting...";
+      const text = [
+        "Full name: " + application.fullName, "Student ID: " + application.studentId,
+        "Talk title: " + application.title, "Brief overview:\n" + application.overview,
+        "Preferred date: " + application.date, "Preferred venue: " + (application.venue || "No preference"),
+        "Email: " + application.email, "WhatsApp: " + application.whatsapp
+      ].join("\n\n");
+      const sid = uid("s");
+      const data = { uid: S.user.uid, kind: "talk", application, text, anonymous: false,
+        name: application.fullName, createdAt: Date.now(), status: "new", reply: "" };
+      if (await put("submissions", sid, data)) {
+        if (!S.submissions.some(s => s.id === sid)) S.submissions.push({ id: sid, ...data });
+        for (const key of Object.keys(application)) delete S.drafts["talk-" + key];
+        render();
+        toast(S.mode === "local" ? "Application saved in this demo only." : "Application submitted. The team can review it in the workspace.");
+      } else {
+        button.disabled = false; button.textContent = "Submit application";
       }
       return;
     }
@@ -1126,7 +1188,7 @@ document.addEventListener("submit", async (e) => {
       const email = clean(fd.get("email")).toLowerCase();
       if (!email.includes("@")) return toast("Enter a valid email address.");
       form.reset();
-      if (await put("subscribers", email, { email, subscribedAt: Date.now() }, true)) toast("Subscribed. You'll get an email for new events and posts.");
+      if (await put("subscribers", email, { email, subscribedAt: Date.now() }, true)) toast("Subscribed. You're on the society's event updates list.");
       return;
     }
     case "add-task": {
@@ -1178,12 +1240,16 @@ document.addEventListener("submit", async (e) => {
         order: existing ? existing.order : Math.max(-1, ...S.events.map((x) => x.order)) + 1
       };
       const eid = existing ? existing.id : uid("e");
+      const newlyPublished = data.published && !existing?.published;
       const next = normEvent(eid, data);
       const i = S.events.findIndex((x) => x.id === eid);
       if (i >= 0) S.events[i] = next; else S.events.push(next);
       if (!existing) { S.view = "team"; S.teamTab = "events"; S.openWs = eid; }
       closeModal(); render();
-      if (await put("events", eid, data)) toast("Saved.");
+      if (await put("events", eid, data)) {
+        toast("Saved.");
+        if (newlyPublished) await promptEventEmail(next);
+      }
       return;
     }
   }
