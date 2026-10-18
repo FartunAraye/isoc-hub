@@ -19,10 +19,13 @@ const firebaseConfig = {
 // Shown in the header and hero. 
 const SOCIETY = {
   name: "Islamic Society",
-  sub: "University of Birmingham Dubai",
-  tagline: "Faith, friendship and good company.",
+  //sub: "University of Birmingham Dubai",
+  tagline: "At the University of Birmingham Dubai",
   joinUrl: "",   // paste your sign-up link; leave "" to hide the Join button
-  instagram: "https://www.instagram.com/uobdisoc/"     // full URL; leave "" to hide the footer link
+  instagram: "https://www.instagram.com/uobdisoc/",
+  linkedin: "",
+  whatsapp: "",
+  linktree: ""
 };
 
 
@@ -53,6 +56,38 @@ const TEAM = {
 // Shown in the "Why join us" band on the home page. Write your own — say what's
 // actually true of your society this year. Icons are any #i-* id from the
 // sprite in index.html (i-crescent, i-book, i-heart, i-lantern, i-star, i-target, ...).
+// Add event photos here: { src: "events/photo.jpg", alt: "Describe the photo", caption: "Event name" }
+const PREVIOUS_EVENTS = [
+  {
+    "src": "images/PHOTO-2026-09-26-20-29-48.jpg",
+    "alt": "Students posing together at the Islamic Society Welcome Week stand"
+  },
+  {
+    "src": "images/PHOTO-2026-10-08-22-15-35 2.jpg",
+    "alt": "Food being served at a society gathering"
+  },
+  {
+    "src": "images/PHOTO-2026-10-08-22-15-35.jpg",
+    "alt": "Students watching a presentation in a campus classroom"
+  },
+  {
+    "src": "images/PHOTO-2026-09-26-20-29-46.jpg",
+    "alt": "Students chatting at the Islamic Society stand during Welcome Week"
+  },
+    {
+    "src": "images/PHOTO-2026-10-08-22-15-35 3.jpg",
+    "alt": "Students posing together in a classroom"
+  },
+  {
+    "src": "images/PHOTO-2026-09-26-20-29-51.jpg",
+    "alt": "Students gathering beside the Welcome Week stand"
+  },
+  {
+    "src": "images/PHOTO-2026-10-08-22-15-35 4.jpg",
+    "alt": "Group photo of students at a campus gathering"
+  }
+];
+
 const WHY = [
   {
     "icon": "i-crescent",
@@ -363,14 +398,22 @@ function gcalUrl(e, when) {
    ===================================================================== */
 const dv = (k) => esc(S.drafts[k] || "");
 const emblem = () => `<img class="emblem" src="logo.jpeg" alt="Islamic Society logo" width="48" height="48">`;
+// Section label + headline. The last word of each title is set in green italics.
+const emph = (t) => { const w = esc(t).split(" "); if (w.length < 2) return w.join(""); const last = w.pop(); return `${w.join(" ")} <em>${last}</em>`; };
+const head = (num, label, title) => `<div class="label">${num ? `${num} / ` : ""}${esc(label)}</div><h2>${emph(title)}</h2>`;
 const lantern = () => `<svg class="lantern" viewBox="0 0 64 130" aria-hidden="true"><line x1="32" y1="0" x2="32" y2="46" stroke="currentColor" stroke-width="1.5"/><path d="M22 46h20l5 10v34c0 8-7 14-15 14s-15-6-15-14V56z" fill="rgba(240,200,120,.14)" stroke="currentColor" stroke-width="1.6"/><path d="M19 66h26M19 92h26" stroke="currentColor" stroke-width="1.2"/><circle cx="32" cy="79" r="7" fill="#f0c878"/><path d="M32 104v16" stroke="currentColor" stroke-width="1.2"/><circle cx="32" cy="123" r="3" fill="currentColor"/></svg>`;
 
+const headerSizeObserver = new ResizeObserver(([entry]) => {
+  document.documentElement.style.setProperty("--header-height", `${entry.target.getBoundingClientRect().height}px`);
+});
+
 function render() {
+  headerSizeObserver.disconnect();
   if (S.view === "team" && !S.isTeam) S.view = "home";
   const views = { home: homeHtml, about: aboutHtml, calendar: calendarHtml, people: peopleHtml, ask: askHtml, talk: talkHtml, team: teamHtml };
   const isHome = S.view === "home";
-  $("#app").innerHTML = `<div class="wrap wrap--bar">${headerHtml()}${navHtml()}</div>
-    ${isHome ? heroHtml() : ""}
+  $("#app").innerHTML = `<div class="page"><div class="gridbg"></div>${headerHtml()}
+    ${isHome ? heroHtml() + tickerHtml() : ""}
     <div class="wrap"><main>${(views[S.view] || homeHtml)()}</main>
       <footer class="foot foot--full">
         <div class="foot-top">
@@ -382,9 +425,7 @@ function render() {
               <a href="#calendar" data-act="nav" data-v="calendar">Events</a>
               <a href="#people" data-act="nav" data-v="people">Our team</a>
             </div>
-            <div><h4>Contact us</h4>
-              <a href="mailto:uobdisoc@gmail.com">uobdisoc@gmail.com</a>
-            </div>
+            <div><h4>Contact us</h4><a href="mailto:uobdisoc@gmail.com">uobdisoc@gmail.com</a></div>
             <div><h4>Connect</h4>
               ${SOCIETY.instagram ? `<a href="${esc(SOCIETY.instagram)}" target="_blank" rel="noopener">Instagram</a>` : ""}
               <a href="#ask" data-act="nav" data-v="ask">Ask &amp; suggest</a>
@@ -393,7 +434,8 @@ function render() {
           </div>
         </div>
         <div class="foot-bottom muted small">${esc(SOCIETY.name)}${SOCIETY.sub ? `, ${esc(SOCIETY.sub)}` : ""}</div>
-      </footer></div>`;
+      </footer></div></div>`;
+  headerSizeObserver.observe($(".topbar"));
   updateCountdowns();
 }
 
@@ -401,15 +443,16 @@ function headerHtml() {
   const hij = hijriToday();
   let auth;
   if (S.mode === "local") auth = `<span class="chip dim">Demo mode</span>`;
-  else if (S.user) auth = `<span class="who" title="${esc(S.user.email)}">${esc(S.user.displayName || S.user.email)}${S.isTeam ? " (team)" : ""}</span><button class="btn small" data-act="sign-out">Sign out</button>`;
-  else auth = `<button class="btn amber small" data-act="sign-in">Sign in</button>`;
-  return `<header class="top">
-    <div class="brand">${emblem()}<div><div class="brand-name">${esc(SOCIETY.name)}</div>${SOCIETY.sub ? `<div class="brand-sub">${esc(SOCIETY.sub)}</div>` : ""}</div></div>
-    <div class="top-right">
-      ${hij ? `<span class="hijri" title="Follows the Umm al-Qura calendar, so it can differ by a day from local moon sighting">${esc(hij)}</span>` : ""}
-      <button class="icon-round" data-act="open-notify" aria-label="Notification settings" title="Notification settings">${ico("i-bell")}${notif.enabled ? '<i class="on"></i>' : ""}</button>
-      ${auth}
-    </div></header>`;
+  else if (S.user) auth = `<span class="who" title="${esc(S.user.email)}">${esc(S.user.displayName || S.user.email)}${S.isTeam ? " (team)" : ""}</span><button class="pill ghost" data-act="sign-out">Sign out</button>`;
+  else auth = `<button class="pill" data-act="sign-in">Sign in &#8599;&#65038;</button>`;
+  return `<header class="topbar"><div class="wrap">
+    <div class="nav-pill">
+      <div class="brand">${emblem()}<span class="brand-name">${esc(SOCIETY.name)}</span></div>
+      ${navHtml()}
+      <div class="top-right"><button class="icon-round" data-act="open-notify" aria-label="Notification settings" title="Notification settings">${ico("i-bell")}${notif.enabled ? '<i class="on"></i>' : ""}</button>${auth}</div>
+    </div>
+    <div class="subline">${hij ? `<span class="hijri" title="Follows the Umm al-Qura calendar, so it can differ by a day from local moon sighting">${esc(hij)}</span>` : ""}</div>
+  </div></header>`;
 }
 
 function navHtml() {
@@ -426,14 +469,15 @@ function navHtml() {
 // .hero-bleed rules in style.css for how the text stays aligned to the
 // same column as the rest of the page.
 function heroHtml() {
-  return `<section class="hero-bleed">
+  const [l1, ...rest] = SOCIETY.name.split(" ");
+  return `<section class="wrap hero">
     <div class="hero-in">
       <div class="bismillah" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
-      <h1>${esc(SOCIETY.name)}</h1>
+      <h1>${esc(l1)}${rest.length ? `<br>${esc(rest.join(" "))}` : ""}</h1>
       <p class="lead">${esc(SOCIETY.tagline)}</p>
-      <div class="cta">${SOCIETY.joinUrl ? `<a class="btn amber" href="${esc(SOCIETY.joinUrl)}" target="_blank" rel="noopener">Join the society</a>` : ""}<button class="btn${SOCIETY.joinUrl ? "" : " amber"}" data-act="nav" data-v="calendar">See what's on</button></div>
+      <div class="cta">${SOCIETY.joinUrl ? `<a class="pill" href="${esc(SOCIETY.joinUrl)}" target="_blank" rel="noopener">Join the society &#8599;&#65038;</a>` : ""}<button class="pill${SOCIETY.joinUrl ? " ghost" : ""}" data-act="nav" data-v="calendar">See what's on${SOCIETY.joinUrl ? "" : " &#8599;&#65038;"}</button></div>
     </div>
-    <a class="hero-more" href="#why" aria-label="Scroll down">${ico("i-crescent")}</a>
+    ${nextCardHtml()}
   </section>`;
 }
 
@@ -465,7 +509,7 @@ function progRow(o) {
     <div class="pdate"><b>${o.start.getDate()}</b><span>${o.start.toLocaleDateString([], { month: "short" })}</span></div>
     <div><div class="ptitle">${esc(e.title)}</div>
       <div class="pmeta"><span>${ico("i-clock")}${fmtDay(o.start)}, ${fmtTime(o.start)}</span>${e.location ? `<span>${ico("i-pin")}${esc(e.location)}</span>` : ""}${e.repeat === "weekly" ? "<span>Every week</span>" : ""}</div></div>
-    <span class="chip">${ico(c.icon)}${c.label}</span></button>`;
+    <span class="tag">${esc(c.label)}</span><span class="arr">&#8599;&#65038;</span></button>`;
 }
 
 function annHtml(a) {
@@ -476,35 +520,93 @@ function annHtml(a) {
 }
 
 function subscribeHtml() {
-  return `<section class="sec"><div class="sec-head"><h2>Email updates</h2><span class="rule"></span></div>
-    <div class="card pad" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-      <p class="muted small" style="max-width:44ch;margin:0;display:flex;gap:8px;align-items:flex-start">${ico("i-mail")}<span>Get event updates emailed by the society team. No account needed.</span></p>
-      <form data-form="subscribe" style="display:flex;gap:8px;flex:1;min-width:220px;max-width:360px">
-        <input class="field" type="email" name="email" required placeholder="you@example.com" aria-label="Email address">
-        <button class="btn amber" type="submit">Subscribe</button>
-      </form>
+  return `<section class="sec">${`<div class="label">04 / Stay updated</div>`}
+    <div class="split">
+      <div class="l">
+        <h2>Join our <em>mailing list.</em></h2>
+        <p>Get an email when a new event is published or the team posts something. No account needed.</p>
+        <form data-form="subscribe" class="subscribe-form">
+          <input type="email" name="email" required placeholder="Enter your email address" aria-label="Email address">
+          <button class="pill" type="submit">Subscribe &#8599;&#65038;</button>
+        </form>
+      </div>
+      <div class="q"><blockquote>A good community <em>changes everything.</em></blockquote><span>${esc(SOCIETY.name)} · UoBD</span></div>
     </div></section>`;
 }
 
+function nextCardHtml() {
+  if (!S.loaded.events) return `<aside class="next"><div class="next-top"><span class="eyebrow"><i></i>Next event</span></div><p class="empty">Loading…</p></aside>`;
+  const o = upcoming(pubEvents(), new Date(), 1)[0];
+  if (!o) return `<aside class="next"><div class="next-top"><span class="eyebrow"><i></i>Next event</span></div>
+    <h3>Events are being planned</h3><p class="muted">Check back soon, in shā’ Allāh.</p></aside>`;
+  const e = o.ev, c = CATS[e.cat];
+  const unit = (k, l) => `<div><b data-u="${k}">--</b><span>${l}</span></div>`;
+  return `<aside class="next">
+    <div class="next-top"><span class="eyebrow"><i></i>Next event</span><span class="tag">${esc(c.label)}</span></div>
+    <h3>${esc(e.title)}</h3>
+    <div class="next-meta"><span>${ico("i-clock")}${fmtDay(o.start)}, ${fmtTime(o.start)}</span>${e.location ? `<span>${ico("i-pin")}${esc(e.location)}</span>` : ""}</div>
+    <div class="cd" data-cd="${o.start.toISOString()}" role="timer" aria-label="Time until ${esc(e.title)}">
+      <div class="cd-live">Happening now</div>
+      <div class="cd-grid">${unit("d", "Days")}${unit("h", "Hours")}${unit("m", "Mins")}${unit("s", "Secs")}</div>
+    </div>
+    <button class="pill" data-act="open-event" data-id="${esc(e.id)}" data-t="${o.start.getTime()}">Details &#8599;&#65038;</button>
+  </aside>`;
+}
+
+function tickerHtml() {
+  const entries = [
+    { label: SOCIETY.name },
+    { label: "LinkedIn", url: SOCIETY.linkedin },
+    { label: SOCIETY.sub },
+    { label: "Instagram", url: SOCIETY.instagram },
+    { label: "WhatsApp group", url: SOCIETY.whatsapp },
+    { label: "Linktree", url: SOCIETY.linktree }
+  ].filter(({ label }) => label);
+  // Render one continuous sequence so colours alternate across every repeat.
+  const items = Array.from({ length: entries.length * 4 }, (_, i) => {
+    const { label, url } = entries[i % entries.length];
+    const repeated = i >= entries.length;
+    const text = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"${repeated ? ' tabindex="-1"' : ""}>${esc(label)}</a>` : esc(label);
+    return `<span class="${i % 2 === 0 ? "tick-green" : "tick-muted"}"${repeated ? ' aria-hidden="true"' : ""}>${text}</span><span aria-hidden="true">·</span>`;
+  }).join("");
+  return `<div class="tick"><div>${items}</div></div>`;
+}
+
+function previousEventsHtml() {
+  const photos = PREVIOUS_EVENTS.length ? PREVIOUS_EVENTS : Array.from({ length: 3 }, () => ({ caption: "Event photos coming soon" }));
+  const slides = photos.map((photo, i) => `<figure class="gallery-slide" role="group" aria-label="${i + 1} of ${photos.length}">
+    ${photo.src ? `<img src="${esc(photo.src)}" alt="${esc(photo.alt || photo.caption || "Previous society event")}" loading="lazy" width="400" height="300">` : `<div class="gallery-placeholder">${ico("i-cal")}<span>Photos coming soon</span></div>`}
+    ${photo.caption ? `<figcaption>${esc(photo.caption)}</figcaption>` : ""}
+  </figure>`).join("");
+  return `<section class="sec event-gallery" aria-label="Our previous events">
+    <div class="gallery-header"><div class="label" id="previous-events-label">02 / Our Previous Events</div></div>
+    <div class="gallery-window" tabindex="0" role="region" aria-labelledby="previous-events-label">
+      <div class="gallery-track"><div class="gallery-group">${slides}</div><div class="gallery-group gallery-copy" aria-hidden="true">${slides}</div></div>
+    </div>
+  </section>`;
+}
+
 function homeHtml() {
-  const ups = upcoming(pubEvents(), new Date(Date.now() - 0), 8);
+  const ups = upcoming(pubEvents(), new Date(Date.now() - 0), 6);
   const anns = sortedAnns().slice(0, 4);
   const list = !S.loaded.events ? `<p class="empty">Loading…</p>` : ups.length ? ups.map(progRow).join("") : `<p class="empty">No events are scheduled yet. When the team publishes one, it will show up here.</p>`;
-  return `${ups[0] ? `<section class="sec sec--next">${archHtml(ups[0])}</section>` : ""}
-    <section class="sec why" id="why"><div class="sec-head"><h2>Why join us</h2><span class="rule"></span></div>
-      <div class="whygrid">${WHY.map((w) => `<div class="whycard">${ico(w.icon)}<h3>${esc(w.title)}</h3><p>${esc(w.body)}</p></div>`).join("")}</div></section>
-    <section class="sec"><div class="sec-head"><h2>Announcements</h2><span class="rule"></span></div>
-      ${anns.length ? anns.map(annHtml).join("") : `<p class="empty">Nothing posted yet.</p>`}</section>
-    <section class="sec"><div class="sec-head"><h2>Coming up</h2><span class="rule"></span></div>${list}</section>
+  return `<section class="sec" id="events">${head("01", "Coming up", "What's on")}<div class="rows">${list}</div></section>
+    <!-- Why join us is temporarily hidden. Remove this comment wrapper to restore it.
+    <section class="sec why" id="why">${head("02", "Why join us", "Why join us")}
+      <div class="whygrid">${WHY.map((w, i) => `<div class="whycard"><small>${pad(i + 1)}</small>${ico(w.icon)}<h3>${esc(w.title)}</h3><p>${esc(w.body)}</p></div>`).join("")}</div></section>
+    -->
+    ${previousEventsHtml()}
+    <section class="sec">${head("03", "Announcements", "Latest news")}
+      <div class="rows">${anns.length ? anns.map(annHtml).join("") : `<p class="empty">Nothing posted yet.</p>`}</div></section>
     ${subscribeHtml()}`;
 }
 
 function aboutHtml() {
   return `<section class="sec">
-    <div class="sec-head"><h2>${esc(ABOUT.title)}</h2><span class="rule"></span></div>
+    ${head("01", "About us", ABOUT.title)}
     <div class="prose">${ABOUT.intro.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
 
-    <div class="sec-head" style="margin-top:40px"><h2>Frequently asked questions</h2><span class="rule"></span></div>
+    <div class="sub-sec">${head("02", "FAQ", "Good to know")}</div>
     <div class="faq">${ABOUT.faqs.map((f, i) => `<details data-faq="${i}"${S.openFaq.has(i) ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
   </section>`;
 }
@@ -526,11 +628,11 @@ function personHtml(p) {
 function peopleHtml() {
   const positions = teamPositions();
   return `<section class="sec">
-    <div class="sec-head"><h2>Our team</h2><span class="rule"></span></div>
-    <p class="muted">${esc(TEAM.intro)}</p>
-    ${S.isTeam ? `<p class="muted">Use Edit position to update a title, name or bio. Saved changes are visible to everyone.</p>` : ""}
+    ${head("01", "The committee", "Our team")}
+    <p class="muted page-intro">${esc(TEAM.intro)}</p>
+    ${S.isTeam ? `<p class="muted page-intro">Use Edit position to update a title, name or bio. Saved changes are visible to everyone.</p>` : ""}
     ${["Leadership Team"].map(group => `
-      <div class="sec-head" style="margin-top:40px"><h2>${group}</h2><span class="rule"></span></div>
+      <h3 class="col-h">${esc(group)}</h3>
       <div class="people">${positions.filter(p => p.group === group).map(personHtml).join("")}</div>
     `).join("")}
   </section>`;
@@ -576,13 +678,15 @@ function calendarHtml() {
   const tba = list.filter((e) => !e.start);
   const filters = [["all", "All"], ...Object.entries(CATS).map(([k, c]) => [k, c.label])];
   const monthName = first.toLocaleDateString([], { month: "long", year: "numeric" });
-  return `<div class="calbar"><div class="calmonth">${esc(monthName)}</div>
+  return `<section class="sec">${head("01", "Events", "What's on")}
+    <div class="calbar"><div class="calmonth">${esc(monthName)}</div>
       <div class="calnav"><button class="btn small" data-act="cal-prev" aria-label="Previous month">Previous</button><button class="btn small" data-act="cal-today">Today</button><button class="btn small" data-act="cal-next" aria-label="Next month">Next</button></div></div>
     <div class="filters">${filters.map(([k, l]) => `<button class="fbtn c-${k}${S.cat === k ? " is-on" : ""}" data-act="cal-cat" data-c="${k}">${k !== "all" ? ico(CATS[k].icon) : ""}${l}</button>`).join("")}</div>
     <div class="grid">${cells.join("")}</div>
-    <section class="sec"><div class="sec-head"><h2>This month</h2><span class="rule"></span></div>
-      ${occ.length ? occ.map(progRow).join("") : `<p class="empty">Nothing on this month${S.cat !== "all" ? " in this category" : ""}.</p>`}</section>
-    ${tba.length ? `<section class="sec"><div class="sec-head"><h2>Dates to be announced</h2><span class="rule"></span></div>${tba.map((e) => `<button class="prow c-${e.cat}" data-act="open-event" data-id="${esc(e.id)}" data-t=""><div class="pdate"><b>?</b></div><div><div class="ptitle">${esc(e.title)}</div></div><span class="chip">${ico(CATS[e.cat].icon)}${CATS[e.cat].label}</span></button>`).join("")}</section>` : ""}`;
+    <div class="block"><h3 class="col-h">This month</h3>
+      <div class="rows">${occ.length ? occ.map(progRow).join("") : `<p class="empty">Nothing on this month${S.cat !== "all" ? " in this category" : ""}.</p>`}</div></div>
+    ${tba.length ? `<div class="block"><h3 class="col-h">Dates to be announced</h3><div class="rows">${tba.map((e) => `<button class="prow c-${e.cat}" data-act="open-event" data-id="${esc(e.id)}" data-t=""><div class="pdate"><b>?</b></div><div><div class="ptitle">${esc(e.title)}</div></div><span class="tag">${esc(CATS[e.cat].label)}</span><span class="arr">&#8599;&#65038;</span></button>`).join("")}</div></div>` : ""}
+    </section>`;
 }
 
 /* ---------- ask & suggest ---------- */
@@ -599,7 +703,7 @@ function askHtml() {
         <div class="mactions"><button class="btn amber" type="submit">Send</button></div></form>`;
   const rows = mine.map((s) => `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "talk" ? "Talk application" : s.kind === "question" ? "Question" : "Suggestion"}</span><span class="chip ${s.status === "answered" ? "good" : "dim"}">${s.status === "answered" ? "Answered" : "Received"}</span></div>
       <p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
-  return `<section class="sec"><div class="sec-head"><h2>Ask &amp; suggest</h2><span class="rule"></span></div>
+  return `<section class="sec">${head("01", "Ask & suggest", "We’re listening")}
     <p class="muted">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
     <div class="askgrid"><div>${form}</div>
       <section class="ask-messages" aria-labelledby="your-messages-heading"><h3 id="your-messages-heading">Your messages</h3>${rows || `<p class="empty">Nothing sent yet.</p>`}</section></div></section>`;
@@ -620,7 +724,7 @@ function talkHtml() {
 <label class="lbl" for="talk-whatsapp">WhatsApp number</label><input class="field" id="talk-whatsapp" name="whatsapp" type="tel" autocomplete="tel" maxlength="40" placeholder="Include your country code, e.g. +971" required data-draft="talk-whatsapp" value="${dv("talk-whatsapp")}">
       <div class="mactions"><button class="btn amber" type="submit">Submit application</button></div></form>`;
   const rows = mine.map(s => `<div class="sub-row"><div class="top-line"><span class="chip">Talk application</span><span class="chip">${esc(s.status === "answered" ? "Answered" : s.status === "archived" ? "Archived" : "Received")}</span></div><p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
-  return `<section class="sec"><div class="sec-head"><h2>Apply to host a talk</h2><span class="rule"></span></div>
+  return `<section class="sec">${head("01", "Host a talk", "Share your knowledge")}
     <p class="muted">Have something to share? Tell us about your proposed talk and how we can contact you.</p>
     ${form}
     ${rows ? `<section style="max-width:640px;margin-top:40px" aria-labelledby="talk-applications-heading"><div class="sec-head"><h2 id="talk-applications-heading">Your applications</h2><span class="rule"></span></div>${rows}</section>` : ""}</section>`;
@@ -877,6 +981,14 @@ function checkReminders() {
 }
 function updateCountdowns() {
   document.querySelectorAll("[data-until]").forEach((el) => { el.textContent = until(new Date(el.dataset.until)); });
+  document.querySelectorAll("[data-cd]").forEach((box) => {
+    const ms = new Date(box.dataset.cd) - Date.now();
+    box.classList.toggle("is-live", ms <= 0);
+    if (ms <= 0) return;
+    const t = Math.floor(ms / 1000);
+    const v = { d: Math.floor(t / 86400), h: Math.floor((t % 86400) / 3600), m: Math.floor((t % 3600) / 60), s: t % 60 };
+    Object.entries(v).forEach(([k, n]) => { const el = box.querySelector(`[data-u="${k}"]`); if (el) el.textContent = pad(n); });
+  });
 }
 async function enableNotifications() {
   if (!canNotify()) { toast("This browser doesn't support notifications."); return; }
@@ -1312,6 +1424,7 @@ function tick() {
   if (k !== shownNext && !S.modal && !typing()) render();
 }
 setInterval(tick, 30000);
+setInterval(updateCountdowns, 1000);
 
 render();
 shownNext = nextKey();
