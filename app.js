@@ -417,7 +417,7 @@ function render() {
     <div class="wrap"><main>${(views[S.view] || homeHtml)()}</main>
       <footer class="foot foot--full">
         <div class="foot-top">
-          <div class="foot-brand">${emblem()}<div><div class="brand-name">${esc(SOCIETY.name)}</div>${SOCIETY.sub ? `<div class="muted small">${esc(SOCIETY.sub)}</div>` : ""}</div></div>
+          <div class="foot-brand"><div class="brand-name">${SOCIETY.name.split(" ").map(word => `<span>${esc(word)}</span>`).join(" ")}</div></div>
           <div class="foot-cols">
             <div><h4>Explore</h4>
               <a href="#home" data-act="nav" data-v="home">Home</a>
@@ -433,7 +433,6 @@ function render() {
             </div>
           </div>
         </div>
-        <div class="foot-bottom muted small">${esc(SOCIETY.name)}${SOCIETY.sub ? `, ${esc(SOCIETY.sub)}` : ""}</div>
       </footer></div></div>`;
   headerSizeObserver.observe($(".topbar"));
   updateCountdowns();
@@ -606,7 +605,7 @@ function aboutHtml() {
     ${head("01", "About us", ABOUT.title)}
     <div class="prose">${ABOUT.intro.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
 
-    <div class="sub-sec">${head("02", "FAQ", "Good to know")}</div>
+    <div class="sub-sec">${head("02", "FAQ", "Frequently Asked Questions")}</div>
     <div class="faq">${ABOUT.faqs.map((f, i) => `<details data-faq="${i}"${S.openFaq.has(i) ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
   </section>`;
 }
@@ -676,7 +675,7 @@ function calendarHtml() {
   const trail = (7 - ((lead + days) % 7)) % 7;
   for (let i = 0; i < trail; i++) cells.push(`<div class="day out"></div>`);
   const tba = list.filter((e) => !e.start);
-  const filters = [["all", "All"], ...Object.entries(CATS).map(([k, c]) => [k, c.label])];
+  const filters = [["all", "All"], ...Object.entries(CATS).filter(([k]) => k !== "welcome").map(([k, c]) => [k, c.label])];
   const monthName = first.toLocaleDateString([], { month: "long", year: "numeric" });
   return `<section class="sec">${head("01", "Events", "What's on")}
     <div class="calbar"><div class="calmonth">${esc(monthName)}</div>
@@ -704,7 +703,7 @@ function askHtml() {
   const rows = mine.map((s) => `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "talk" ? "Talk application" : s.kind === "question" ? "Question" : "Suggestion"}</span><span class="chip ${s.status === "answered" ? "good" : "dim"}">${s.status === "answered" ? "Answered" : "Received"}</span></div>
       <p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
   return `<section class="sec">${head("01", "Ask & suggest", "We’re listening")}
-    <p class="muted">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
+    <p class="page-intro ask-intro">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
     <div class="askgrid"><div>${form}</div>
       <section class="ask-messages" aria-labelledby="your-messages-heading"><h3 id="your-messages-heading">Your messages</h3>${rows || `<p class="empty">Nothing sent yet.</p>`}</section></div></section>`;
 }
