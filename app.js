@@ -46,7 +46,7 @@ const TEAM = {
   members: [
     { id: "position-0", role: "President", name: "Ramla Yusuf", blurb: "" },
     { id: "position-1", role: "Vice President - Brothers'", name: "Youssef Waly", blurb: "" },
-    { id: "position-10", role: "Vice President - Sisters'", name: "Isra Saeed Aamir", blurb: "" },
+    { id: "position-10", role: "Vice President - Sisters'", name: "Isra Aamir Saeed", blurb: "" },
     { id: "position-4", role: "Marketing Lead", name: "Fartun Araye", blurb: "" },
     { id: "position-2", role: "Events Lead", name: "Manahil Rehan", blurb: "" },
     { id: "position-3", role: "Outreach Lead", name: "Amna Mohsin Khan", blurb: "" },
