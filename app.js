@@ -47,9 +47,30 @@ const TEAM = {
     { id: "position-0", role: "President", name: "Ramla Yusuf", blurb: "" },
     { id: "position-1", role: "Vice President - Brothers'", name: "Youssef Waly", blurb: "" },
     { id: "position-10", role: "Vice President - Sisters'", name: "Isra Aamir Saeed", blurb: "" },
-    { id: "position-4", role: "Marketing Lead", name: "Fartun Araye", blurb: "" },
+    { id: "position-4", role: "Marketing Lead", name: "Umeima Fartun Araye", blurb: "" },
     { id: "position-2", role: "Events Lead", name: "Manahil Rehan", blurb: "" },
     { id: "position-3", role: "Outreach Lead", name: "Amna Mohsin Khan", blurb: "" },
+    { id: "committee-1", group: "The Committee", role: "Committee member", name: "Hoour Shah", blurb: "" },
+    { id: "committee-2", group: "The Committee", role: "Committee member", name: "Minah Saqib", blurb: "" },
+    { id: "committee-3", group: "The Committee", role: "Committee member", name: "Sofiya Kadri", blurb: "" },
+    { id: "committee-4", group: "The Committee", role: "Committee member", name: "Sarah Mehkeri", blurb: "" },
+    { id: "committee-5", group: "The Committee", role: "Committee member", name: "Maryam Raji", blurb: "" },
+    { id: "committee-6", group: "The Committee", role: "Committee member", name: "Nuha Shireen", blurb: "" },
+    { id: "committee-7", group: "The Committee", role: "Committee member", name: "Iman Irfan", blurb: "" },
+    { id: "committee-8", group: "The Committee", role: "Committee member", name: "Nabeela Tariq", blurb: "" },
+    { id: "committee-9", group: "The Committee", role: "Committee member", name: "Mayra Madani", blurb: "" },
+    { id: "committee-10", group: "The Committee", role: "Committee member", name: "Maysoon Mgariaf", blurb: "" },
+    { id: "committee-11", group: "The Committee", role: "Committee member", name: "Muznah Kashif", blurb: "" },
+    { id: "committee-12", group: "The Committee", role: "Committee member", name: "Zoya Mohsin", blurb: "" },
+    { id: "committee-13", group: "The Committee", role: "Committee member", name: "Rida Sheikh", blurb: "" },
+    { id: "committee-14", group: "The Committee", role: "Committee member", name: "Zainab Arshad", blurb: "" },
+    { id: "committee-15", group: "The Committee", role: "Committee member", name: "Mona Mahrousa", blurb: "" },
+    { id: "committee-16", group: "The Committee", role: "Committee member", name: "Aliza Imtiaz", blurb: "" },
+    { id: "committee-17", group: "The Committee", role: "Committee member", name: "Aleeza Furniturewala", blurb: "" },
+    { id: "committee-18", group: "The Committee", role: "Committee member", name: "Sarah Hadiya", blurb: "" },
+    { id: "committee-19", group: "The Committee", role: "Committee member", name: "Leen Aboulhoda", blurb: "" },
+    { id: "committee-20", group: "The Committee", role: "Committee member", name: "Anas Umair", blurb: "" },
+    { id: "committee-21", group: "The Committee", role: "Committee member", name: "Ali Mahdi", blurb: "" },
   ]
 };
 
@@ -397,7 +418,8 @@ function gcalUrl(e, when) {
    7. RENDERING
    ===================================================================== */
 const dv = (k) => esc(S.drafts[k] || "");
-const emblem = () => `<img class="emblem" src="logo.jpeg" alt="Islamic Society logo" width="48" height="48">`;
+const logoHtml = (className) => `<picture class="${className}"><source media="(prefers-color-scheme: dark)" srcset="assets/logo-cream.png?v=png3"><img src="assets/logo-green.png?v=png3" alt="Islamic Society logo" width="2000" height="2000"></picture>`;
+const emblem = () => logoHtml("emblem");
 // Section label + headline. The last word of each title is set in green italics.
 const emph = (t) => { const w = esc(t).split(" "); if (w.length < 2) return w.join(""); const last = w.pop(); return `${w.join(" ")} <em>${last}</em>`; };
 const head = (num, label, title) => `<div class="label">${num ? `${num} / ` : ""}${esc(label)}</div><h2>${emph(title)}</h2>`;
@@ -425,8 +447,8 @@ function render() {
               <a href="#calendar" data-act="nav" data-v="calendar">Events</a>
               <a href="#people" data-act="nav" data-v="people">Our team</a>
             </div>
-            <div><h4>Contact us</h4><a href="mailto:uobdisoc@gmail.com">uobdisoc@gmail.com</a></div>
             <div><h4>Connect</h4>
+              <a href="mailto:uobdisoc@gmail.com">Email</a>
               ${SOCIETY.instagram ? `<a href="${esc(SOCIETY.instagram)}" target="_blank" rel="noopener">Instagram</a>` : ""}
               <a href="#ask" data-act="nav" data-v="ask">Ask &amp; suggest</a>
               <a href="#talk" data-act="nav" data-v="talk">Host a talk</a>
@@ -435,6 +457,7 @@ function render() {
         </div>
       </footer></div></div>`;
   headerSizeObserver.observe($(".topbar"));
+  updateDateVisibility();
   updateCountdowns();
 }
 
@@ -446,7 +469,7 @@ function headerHtml() {
   else auth = `<button class="pill" data-act="sign-in">Sign in &#8599;&#65038;</button>`;
   return `<header class="topbar"><div class="wrap">
     <div class="nav-pill">
-      <div class="brand">${emblem()}<span class="brand-name">${esc(SOCIETY.name)}</span></div>
+      <a class="brand" href="#home" data-act="home-hero" aria-label="Islamic Society home">${emblem()}<span class="brand-name">${esc(SOCIETY.name)}</span></a>
       ${navHtml()}
       <div class="top-right"><button class="icon-round" data-act="open-notify" aria-label="Notification settings" title="Notification settings">${ico("i-bell")}${notif.enabled ? '<i class="on"></i>' : ""}</button>${auth}</div>
     </div>
@@ -601,7 +624,7 @@ function homeHtml() {
 }
 
 function aboutHtml() {
-  return `<section class="sec">
+  return `<section class="sec about-section">
     ${head("01", "About us", ABOUT.title)}
     <div class="prose">${ABOUT.intro.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
 
@@ -630,10 +653,10 @@ function peopleHtml() {
     ${head("01", "The committee", "Our team")}
     <p class="muted page-intro">${esc(TEAM.intro)}</p>
     ${S.isTeam ? `<p class="muted page-intro">Use Edit position to update a title, name or bio. Saved changes are visible to everyone.</p>` : ""}
-    ${["Leadership Team"].map(group => `
+    ${["Leadership Team", "The Committee"].map(group => `<section class="team-group">
       <h3 class="col-h">${esc(group)}</h3>
       <div class="people">${positions.filter(p => p.group === group).map(personHtml).join("")}</div>
-    `).join("")}
+    </section>`).join("")}
   </section>`;
 }
 
@@ -1138,6 +1161,11 @@ document.addEventListener("click", async (e) => {
   const ev = id ? S.events.find((x) => x.id === id) : null;
 
   switch (act) {
+    case "home-hero":
+      e.preventDefault();
+      if (S.view !== "home") location.hash = "home";
+      else scrollTop();
+      return;
     case "close-bg": case "close-modal": return closeModal();
     case "nav":
       location.hash = el.dataset.v;
@@ -1410,6 +1438,21 @@ document.addEventListener("visibilitychange", () => {
   if (S.view === "home") markSeen();
 });
 window.addEventListener("pagehide", flushAll);
+
+// Fade the date without changing the sticky header's height.
+const updateDateVisibility = () => {
+  const root = document.documentElement;
+  root.classList.toggle("past-page-top", window.scrollY > 16);
+  // Separate thresholds prevent the shrinking header from flickering near the top.
+  if (window.scrollY > 80) root.classList.add("compact-phone-nav");
+  else if (window.scrollY < 8) root.classList.remove("compact-phone-nav");
+  const nav = document.querySelector(".topbar .nav");
+  if (nav) nav.inert = matchMedia("(max-width:640px)").matches && root.classList.contains("compact-phone-nav");
+};
+window.addEventListener("scroll", updateDateVisibility, { passive: true });
+window.addEventListener("resize", updateDateVisibility);
+window.addEventListener("pageshow", updateDateVisibility);
+updateDateVisibility();
 
 /* =====================================================================
    11. BOOT
