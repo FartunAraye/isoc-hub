@@ -24,7 +24,7 @@ const SOCIETY = {
   joinUrl: "",   // paste your sign-up link; leave "" to hide the Join button
   instagram: "https://www.instagram.com/uobdisoc/",
   linkedin: "",
-  whatsapp: "",
+  whatsapp: "https://chat.whatsapp.com/Jeh16HFmzJ5KA38sqH7oHT?s=cl&p=i&mlu=4&ilr=4&iam=0",
   linktree: ""
 };
 
@@ -577,12 +577,11 @@ function nextCardHtml() {
 
 function tickerHtml() {
   const entries = [
-    { label: SOCIETY.name },
-    { label: "LinkedIn", url: SOCIETY.linkedin },
     { label: SOCIETY.sub },
     { label: "Instagram", url: SOCIETY.instagram },
+    { label: SOCIETY.name },
     { label: "WhatsApp group", url: SOCIETY.whatsapp },
-    { label: "Linktree", url: SOCIETY.linktree }
+    { label: SOCIETY.name }
   ].filter(({ label }) => label);
   // Render one continuous sequence so colours alternate across every repeat.
   const items = Array.from({ length: entries.length * 4 }, (_, i) => {
@@ -591,7 +590,7 @@ function tickerHtml() {
     const text = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"${repeated ? ' tabindex="-1"' : ""}>${esc(label)}</a>` : esc(label);
     return `<span class="${i % 2 === 0 ? "tick-green" : "tick-muted"}"${repeated ? ' aria-hidden="true"' : ""}>${text}</span><span aria-hidden="true">·</span>`;
   }).join("");
-  return `<div class="tick"><div>${items}</div></div>`;
+  return `<div class="wrap ticker-wrap"><div class="tick"><div>${items}</div></div></div>`;
 }
 
 function previousEventsHtml() {

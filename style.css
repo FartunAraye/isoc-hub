@@ -175,9 +175,9 @@ h2{font-size:clamp(34px,5.4vw,64px);line-height:1;letter-spacing:-.035em;font-we
 .gallery-header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}
 .gallery-header .label{margin:0}
 .gallery-window{position:relative;width:100%;overflow:hidden;--photo-width:180px;--photo-gap:14px}
-.gallery-window::before,.gallery-window::after{content:"";position:absolute;top:0;bottom:0;width:clamp(28px,7vw,110px);z-index:1;pointer-events:none;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
-.gallery-window::before{left:0;background:linear-gradient(90deg,var(--bg),transparent);-webkit-mask-image:linear-gradient(90deg,#000,transparent);mask-image:linear-gradient(90deg,#000,transparent)}
-.gallery-window::after{right:0;background:linear-gradient(270deg,var(--bg),transparent);-webkit-mask-image:linear-gradient(270deg,#000,transparent);mask-image:linear-gradient(270deg,#000,transparent)}
+.gallery-window::before,.gallery-window::after,.tick::before,.tick::after{content:"";position:absolute;top:0;bottom:0;width:clamp(28px,7vw,110px);z-index:1;pointer-events:none;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.gallery-window::before,.tick::before{left:0;background:linear-gradient(90deg,var(--bg),transparent);-webkit-mask-image:linear-gradient(90deg,#000,transparent);mask-image:linear-gradient(90deg,#000,transparent)}
+.gallery-window::after,.tick::after{right:0;background:linear-gradient(270deg,var(--bg),transparent);-webkit-mask-image:linear-gradient(270deg,#000,transparent);mask-image:linear-gradient(270deg,#000,transparent)}
 .gallery-track{display:flex;width:max-content;animation:gallery-drift 40s linear infinite}
 .gallery-group{display:flex;gap:var(--photo-gap);padding-right:var(--photo-gap);flex-shrink:0}
 .gallery-slide{flex:0 0 var(--photo-width);width:var(--photo-width);min-width:0;margin:0}
@@ -189,6 +189,7 @@ h2{font-size:clamp(34px,5.4vw,64px);line-height:1;letter-spacing:-.035em;font-we
 @media(max-width:640px){
   .gallery-header{gap:8px;align-items:center}
   .gallery-window{width:100vw;margin-left:calc(50% - 50vw);--photo-width:144px;--photo-gap:10px}
+  .wrap.ticker-wrap{padding:0}
 }
 @media(prefers-reduced-motion:reduce){
   .gallery-track{animation:none}
@@ -360,7 +361,7 @@ section.block{padding-top:56px}
   .topbar{padding-top:calc(8px + env(safe-area-inset-top,0px))}
   .nav-pill{gap:8px;padding:8px 10px;border-radius:24px}
   .brand{gap:7px;font-size:clamp(12px,3.8vw,15px);letter-spacing:.01em;min-height:44px;align-items:center}
-  .topbar .brand-name{align-self:center;line-height:1}
+  .topbar .brand-name{align-self:center;line-height:1;transform:translateY(2px)}
   .emblem{width:28px;height:28px;transform:none}
   .top-right{gap:6px;margin-left:auto}
   .top-right .pill{padding:8px 12px;min-height:44px;font-size:12px}
@@ -413,7 +414,14 @@ section.block{padding-top:56px}
   .line{grid-template-columns:auto minmax(0,1fr) 76px auto}
   .line .field{min-width:0}
   .foot{margin-top:64px}
-  .foot-cols{gap:40px}
+  .foot-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:16px}
+  .foot-brand{justify-content:flex-start;align-self:start}
+  .foot-brand .brand-name{font-size:clamp(30px,10vw,44px)}
+  .foot-cols{display:block;width:auto}
+  /* Temporarily hide Explore on phones; keep its links for desktop. */
+  .foot-cols>div:first-child{display:none}
+  .foot-cols a[href="#ask"],.foot-cols a[href="#talk"]{display:none}
+  .foot-cols>div{min-width:0}
   #modal{padding:12px}
   .mpanel{padding:26px 22px;max-height:calc(100dvh - 24px);overflow-wrap:anywhere}
   .mpanel h2{padding-right:28px}
