@@ -106,6 +106,22 @@ const PREVIOUS_EVENTS = [
   {
     "src": "images/PHOTO-2026-10-08-22-15-35 4.jpg",
     "alt": "Group photo of students at a campus gathering"
+  },
+  {
+    "src": "images/tea-pouring.jpg",
+    "alt": "Tea being poured into a paper cup at a society gathering"
+  },
+  {
+    "src": "images/group-photo.jpg",
+    "alt": "Four students smiling together at a society event"
+  },
+  {
+    "src": "images/refreshments.jpg",
+    "alt": "Students chatting over tea and snacks beside a screen showing Surah Al-Fatiha"
+  },
+  {
+    "src": "images/beanbags.jpg",
+    "alt": "Students sitting on bean bags watching a talk"
   }
 ];
 
