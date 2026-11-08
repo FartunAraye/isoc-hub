@@ -433,43 +433,89 @@ const headerSizeObserver = new ResizeObserver(([entry]) => {
 let activeRecording = null;
 let floatingRecordingPosition = null;
 let tuckedRecordingSide = null;
-function positionFloatingRecording(layer, x, y) {
+function positionFloatingRecording(layer, x, y, { overshoot = false, animate = false } = {}) {
   const rect = layer.getBoundingClientRect();
-  const left = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8));
+  // While dragging, the sides may slide off-screen (so the video can be tucked); up/down never can.
+  const minLeft = overshoot ? 28 - rect.width : 8;
+  const maxLeft = overshoot ? window.innerWidth - 28 : window.innerWidth - rect.width - 8;
+  const left = Math.max(minLeft, Math.min(x, maxLeft));
   const top = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
-  floatingRecordingPosition = { x: left, y: top };
+  floatingRecordingPosition = {
+    x: Math.max(8, Math.min(left, window.innerWidth - rect.width - 8)),
+    y: top
+  };
+  layer.style.transition = animate ? "left .3s ease, top .3s ease" : "none";
   Object.assign(layer.style, { left: `${left}px`, top: `${top}px`, right: "auto", bottom: "auto" });
+}
+// Pin the CSS-anchored (right/bottom) position to explicit left/top so it can animate.
+function pinRecordingLayer(layer) {
+  const rect = layer.getBoundingClientRect();
+  layer.style.transition = "none";
+  Object.assign(layer.style, { left: `${rect.left}px`, top: `${rect.top}px`, right: "auto", bottom: "auto" });
+  void layer.offsetWidth;
+}
+function tuckRecording(layer, side) {
+  if (!floatingRecordingPosition) {
+    const rect = layer.getBoundingClientRect();
+    floatingRecordingPosition = {
+      x: Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8)),
+      y: Math.max(8, Math.min(rect.top, window.innerHeight - rect.height - 8))
+    };
+  }
+  pinRecordingLayer(layer);
+  tuckedRecordingSide = side;
+  syncRecordingPlayer();
 }
 function enableRecordingDrag(layer) {
   const handle = layer.querySelector(".recording-drag");
-  let drag = null;
-  handle.addEventListener("pointerdown", e => {
+  const pad = layer.querySelector(".recording-dragpad");
+  let drag = null, interactTimer = null;
+  const start = e => {
     if (!layer.classList.contains("is-floating") || !e.isPrimary || e.button !== 0) return;
     const rect = layer.getBoundingClientRect();
-    drag = { id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top };
-    handle.setPointerCapture(e.pointerId);
-    layer.classList.add("is-dragging");
+    drag = { id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top, sx: e.clientX, sy: e.clientY, moved: false, el: e.currentTarget };
+    e.currentTarget.setPointerCapture(e.pointerId);
     e.preventDefault();
-  });
-  handle.addEventListener("pointermove", e => {
+  };
+  const move = e => {
     if (!drag || drag.id !== e.pointerId) return;
-    positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y);
-  });
+    if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6) return;
+    drag.moved = true;
+    layer.classList.add("is-dragging");
+    // Only a mostly-sideways drag may slide off the edge; moving up/down always stays on-screen.
+    const horizontal = Math.abs(e.clientX - drag.sx) > Math.abs(e.clientY - drag.sy);
+    positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y, { overshoot: horizontal });
+  };
   const finish = e => {
     if (!drag) return;
+    const d = drag;
     drag = null;
     layer.classList.remove("is-dragging");
     if (e.type !== "pointerup") return;
+    if (!d.moved) {
+      // A plain tap on the video lets the next tap reach the YouTube controls for a few seconds.
+      if (d.el === pad) {
+        layer.classList.add("is-interacting");
+        clearTimeout(interactTimer);
+        interactTimer = setTimeout(() => layer.classList.remove("is-interacting"), 4000);
+      }
+      return;
+    }
     const rect = layer.getBoundingClientRect();
-    if (rect.left <= 16 || rect.right >= window.innerWidth - 16) {
-      tuckedRecordingSide = rect.left + rect.width / 2 < window.innerWidth / 2 ? "left" : "right";
-      syncRecordingPlayer();
+    const hidden = rect.left < 0 ? -rect.left : Math.max(0, rect.right - window.innerWidth);
+    if (hidden > rect.width * 0.3) {
+      tuckRecording(layer, rect.left + rect.width / 2 < window.innerWidth / 2 ? "left" : "right");
       layer.querySelector(".recording-restore").focus({ preventScroll: true });
+    } else {
+      positionFloatingRecording(layer, rect.left, rect.top, { animate: true });
     }
   };
-  handle.addEventListener("pointerup", finish);
-  handle.addEventListener("pointercancel", finish);
-  handle.addEventListener("lostpointercapture", finish);
+  for (const el of [handle, pad]) {
+    el.addEventListener("pointerdown", start);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", finish);
+    el.addEventListener("pointercancel", finish);
+  }
   handle.addEventListener("keydown", e => {
     const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (!steps[e.key] || !layer.classList.contains("is-floating")) return;
@@ -480,7 +526,7 @@ function enableRecordingDrag(layer) {
 }
 function syncRecordingPlayer() {
   const layer = document.getElementById("recording-player-layer");
-  if (!layer || !activeRecording) return;
+  if (!layer || !activeRecording || layer.classList.contains("is-dragging")) return;
   const slot = S.view === "recordings"
     ? document.querySelector(`[data-recording-slot="${activeRecording.id}"]`) : null;
   layer.classList.toggle("is-floating", !slot);
@@ -490,15 +536,23 @@ function syncRecordingPlayer() {
   if (restore) restore.hidden = !!slot || !tuckedRecordingSide;
   if (slot) {
     const rect = slot.getBoundingClientRect();
+    layer.dataset.mode = "slot";
     layer.style.cssText = `left:${rect.left + window.scrollX}px;top:${rect.top + window.scrollY}px;width:${rect.width}px;height:${rect.height}px`;
-  } else {
+    return;
+  }
+  if (layer.dataset.mode !== "float") {
+    layer.dataset.mode = "float";
     layer.style.cssText = "";
     if (floatingRecordingPosition) positionFloatingRecording(layer, floatingRecordingPosition.x, floatingRecordingPosition.y);
-    if (tuckedRecordingSide) {
-      const rect = layer.getBoundingClientRect();
-      layer.style.left = tuckedRecordingSide === "left" ? `${28 - rect.width}px` : `${window.innerWidth - 28}px`;
-      layer.style.right = "auto";
-    }
+  }
+  if (tuckedRecordingSide) {
+    const rect = layer.getBoundingClientRect();
+    layer.style.transition = "left .3s ease";
+    layer.style.left = tuckedRecordingSide === "left" ? `${28 - rect.width}px` : `${window.innerWidth - 28}px`;
+    layer.style.right = "auto";
+  } else if (floatingRecordingPosition) {
+    pinRecordingLayer(layer);
+    positionFloatingRecording(layer, floatingRecordingPosition.x, floatingRecordingPosition.y, { animate: true });
   }
 }
 function closeRecordingPlayer() {
@@ -1268,7 +1322,7 @@ document.addEventListener("click", async (e) => {
       const layer = document.createElement("section");
       layer.id = "recording-player-layer";
       layer.setAttribute("aria-label", "Recording player");
-      layer.innerHTML = `<div class="recording-player-bar"><button class="recording-drag" type="button" aria-label="Move video player" title="Drag to move; use arrow keys when focused"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-act="tuck-recording" aria-label="Tuck video to screen edge" title="Tuck video away"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-act="close-recording" aria-label="Close video"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>`;
+      layer.innerHTML = `<div class="recording-player-bar"><button class="recording-drag" type="button" aria-label="Move video player" title="Drag to move; use arrow keys when focused"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-act="close-recording" aria-label="Close video"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>`;
       const player = document.createElement("iframe");
       player.className = "recording-player";
       player.src = `https://www.youtube-nocookie.com/embed/${recording.id}?playsinline=1&autoplay=1`;
@@ -1283,21 +1337,15 @@ document.addEventListener("click", async (e) => {
       restore.setAttribute("aria-label", "Bring video back");
       restore.hidden = true;
       restore.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      const pad = document.createElement("div");
+      pad.className = "recording-dragpad";
       layer.appendChild(restore);
       layer.appendChild(player);
+      layer.appendChild(pad);
       document.body.appendChild(layer);
       enableRecordingDrag(layer);
       render();
       player.focus();
-      return;
-    }
-    case "tuck-recording": {
-      const layer = document.getElementById("recording-player-layer");
-      if (!layer || !layer.classList.contains("is-floating")) return;
-      const rect = layer.getBoundingClientRect();
-      tuckedRecordingSide = rect.left + rect.width / 2 < window.innerWidth / 2 ? "left" : "right";
-      syncRecordingPlayer();
-      layer.querySelector(".recording-restore").focus({ preventScroll: true });
       return;
     }
     case "restore-recording": {

@@ -483,3 +483,13 @@ section.block{padding-top:56px}
 .recording-restore{position:absolute;top:50%;left:0;transform:translateY(-50%);display:grid;place-items:center;width:28px;height:72px;border:1px solid var(--rule);border-radius:12px 0 0 12px;background:var(--green);color:var(--bg);padding:0;pointer-events:auto;z-index:2}
 .tucked-left .recording-restore{left:auto;right:0;border-radius:0 12px 12px 0}
 .tucked-left .recording-restore svg{transform:rotate(180deg)}
+
+/* Drag from anywhere on the floating video; a tap briefly hands touches back to the player controls. */
+.recording-dragpad{display:none}
+.is-floating .recording-dragpad{display:block;position:absolute;inset:0;z-index:0;touch-action:none;cursor:grab}
+.is-dragging .recording-dragpad{cursor:grabbing}
+.is-interacting .recording-dragpad,.is-tucked .recording-dragpad{pointer-events:none}
+
+/* Smooth slide: fade the chrome while the layer slides off-screen. */
+#recording-player-layer{transition:background-color .3s ease,border-color .3s ease,box-shadow .3s ease}
+.recording-player,.recording-player-bar{transition:opacity .3s ease}
