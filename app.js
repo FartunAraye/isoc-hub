@@ -467,7 +467,6 @@ function tuckRecording(layer, side) {
   syncRecordingPlayer();
 }
 function enableRecordingDrag(layer) {
-  const handle = layer.querySelector(".recording-drag");
   const pad = layer.querySelector(".recording-dragpad");
   let drag = null, interactTimer = null;
   const start = e => {
@@ -510,13 +509,13 @@ function enableRecordingDrag(layer) {
       positionFloatingRecording(layer, rect.left, rect.top, { animate: true });
     }
   };
-  for (const el of [handle, pad]) {
+  for (const el of [pad]) {
     el.addEventListener("pointerdown", start);
     el.addEventListener("pointermove", move);
     el.addEventListener("pointerup", finish);
     el.addEventListener("pointercancel", finish);
   }
-  handle.addEventListener("keydown", e => {
+  pad.addEventListener("keydown", e => {
     const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (!steps[e.key] || !layer.classList.contains("is-floating")) return;
     e.preventDefault();
@@ -1322,7 +1321,7 @@ document.addEventListener("click", async (e) => {
       const layer = document.createElement("section");
       layer.id = "recording-player-layer";
       layer.setAttribute("aria-label", "Recording player");
-      layer.innerHTML = `<div class="recording-player-bar"><button class="recording-drag" type="button" aria-label="Move video player" title="Drag to move; use arrow keys when focused"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-act="close-recording" aria-label="Close video"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>`;
+      layer.innerHTML = `<div class="recording-player-bar"><button type="button" data-act="close-recording" aria-label="Close video"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>`;
       const player = document.createElement("iframe");
       player.className = "recording-player";
       player.src = `https://www.youtube-nocookie.com/embed/${recording.id}?playsinline=1&autoplay=1`;
@@ -1339,6 +1338,8 @@ document.addEventListener("click", async (e) => {
       restore.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       const pad = document.createElement("div");
       pad.className = "recording-dragpad";
+      pad.tabIndex = 0;
+      pad.setAttribute("aria-label", "Move video player (arrow keys)");
       layer.appendChild(restore);
       layer.appendChild(player);
       layer.appendChild(pad);
@@ -1351,7 +1352,7 @@ document.addEventListener("click", async (e) => {
     case "restore-recording": {
       tuckedRecordingSide = null;
       syncRecordingPlayer();
-      document.querySelector("#recording-player-layer .recording-drag")?.focus({ preventScroll: true });
+      document.querySelector("#recording-player-layer .recording-dragpad")?.focus({ preventScroll: true });
       return;
     }
     case "close-recording": closeRecordingPlayer(); render(); return;
