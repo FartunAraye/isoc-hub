@@ -439,13 +439,12 @@ section.block{padding-top:56px}
   .line{grid-template-columns:auto minmax(0,1fr) 76px auto}
   .line .field{min-width:0}
   .foot{margin-top:64px}
-  .foot-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:16px}
+  .foot-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:14px}
   .foot-brand{justify-content:flex-start;align-self:start}
-  .foot-brand .brand-name{font-size:clamp(30px,10vw,44px)}
-  .foot-cols{display:block;width:auto}
-  /* Temporarily hide Explore on phones; keep its links for desktop. */
-  .foot-cols>div:first-child{display:none}
-  .foot-cols a[href="#ask"],.foot-cols a[href="#talk"]{display:none}
+  .foot-brand .brand-name{font-size:clamp(22px,7vw,30px)}
+  .foot-cols{display:flex;gap:18px;width:auto;flex-wrap:nowrap}
+  .foot-cols h4{font-size:10px;letter-spacing:.1em}
+  .foot-cols a{font-size:13px;white-space:nowrap}
   .foot-cols>div{min-width:0}
   #modal{padding:12px}
   .mpanel{padding:26px 22px;max-height:calc(100dvh - 24px);overflow-wrap:anywhere}
