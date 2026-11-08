@@ -70,7 +70,7 @@ const TEAM = {
     { id: "committee-18", group: "The Committee", role: "Committee member", name: "Sarah Hadiya", blurb: "" },
     { id: "committee-19", group: "The Committee", role: "Committee member", name: "Leen Aboulhoda", blurb: "" },
     { id: "committee-20", group: "The Committee", role: "Committee member", name: "Anas Umair", blurb: "" },
-    { id: "committee-21", group: "The Committee", role: "Committee member", name: "Ali Mahdi", blurb: "" },
+    { id: "committee-21", group: "The Committee", role: "Committee member", name: "Ali Mithani", blurb: "" },
   ]
 };
 
@@ -294,7 +294,7 @@ const normWs = (d = {}) => ({
 });
 
 const now0 = new Date();
-const VIEWS = ["home", "about", "calendar", "people", "ask", "talk", "team"];
+const VIEWS = ["home", "about", "calendar", "recordings", "people", "ask", "talk", "team"];
 const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS.includes(v) ? v : "home"; };
 const S = {
   mode: "local",              // "live" once Firebase is configured
@@ -429,10 +429,88 @@ const headerSizeObserver = new ResizeObserver(([entry]) => {
   document.documentElement.style.setProperty("--header-height", `${entry.target.getBoundingClientRect().height}px`);
 });
 
+// The player lives outside #app so rendering or switching tabs never reloads it.
+let activeRecording = null;
+let floatingRecordingPosition = null;
+let tuckedRecordingSide = null;
+function positionFloatingRecording(layer, x, y) {
+  const rect = layer.getBoundingClientRect();
+  const left = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8));
+  const top = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
+  floatingRecordingPosition = { x: left, y: top };
+  Object.assign(layer.style, { left: `${left}px`, top: `${top}px`, right: "auto", bottom: "auto" });
+}
+function enableRecordingDrag(layer) {
+  const handle = layer.querySelector(".recording-drag");
+  let drag = null;
+  handle.addEventListener("pointerdown", e => {
+    if (!layer.classList.contains("is-floating") || !e.isPrimary || e.button !== 0) return;
+    const rect = layer.getBoundingClientRect();
+    drag = { id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top };
+    handle.setPointerCapture(e.pointerId);
+    layer.classList.add("is-dragging");
+    e.preventDefault();
+  });
+  handle.addEventListener("pointermove", e => {
+    if (!drag || drag.id !== e.pointerId) return;
+    positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y);
+  });
+  const finish = e => {
+    if (!drag) return;
+    drag = null;
+    layer.classList.remove("is-dragging");
+    if (e.type !== "pointerup") return;
+    const rect = layer.getBoundingClientRect();
+    if (rect.left <= 16 || rect.right >= window.innerWidth - 16) {
+      tuckedRecordingSide = rect.left + rect.width / 2 < window.innerWidth / 2 ? "left" : "right";
+      syncRecordingPlayer();
+      layer.querySelector(".recording-restore").focus({ preventScroll: true });
+    }
+  };
+  handle.addEventListener("pointerup", finish);
+  handle.addEventListener("pointercancel", finish);
+  handle.addEventListener("lostpointercapture", finish);
+  handle.addEventListener("keydown", e => {
+    const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    if (!steps[e.key] || !layer.classList.contains("is-floating")) return;
+    e.preventDefault();
+    const rect = layer.getBoundingClientRect(), step = e.shiftKey ? 40 : 10;
+    positionFloatingRecording(layer, rect.left + steps[e.key][0] * step, rect.top + steps[e.key][1] * step);
+  });
+}
+function syncRecordingPlayer() {
+  const layer = document.getElementById("recording-player-layer");
+  if (!layer || !activeRecording) return;
+  const slot = S.view === "recordings"
+    ? document.querySelector(`[data-recording-slot="${activeRecording.id}"]`) : null;
+  layer.classList.toggle("is-floating", !slot);
+  layer.classList.toggle("is-tucked", !slot && !!tuckedRecordingSide);
+  layer.classList.toggle("tucked-left", tuckedRecordingSide === "left");
+  const restore = layer.querySelector(".recording-restore");
+  if (restore) restore.hidden = !!slot || !tuckedRecordingSide;
+  if (slot) {
+    const rect = slot.getBoundingClientRect();
+    layer.style.cssText = `left:${rect.left + window.scrollX}px;top:${rect.top + window.scrollY}px;width:${rect.width}px;height:${rect.height}px`;
+  } else {
+    layer.style.cssText = "";
+    if (floatingRecordingPosition) positionFloatingRecording(layer, floatingRecordingPosition.x, floatingRecordingPosition.y);
+    if (tuckedRecordingSide) {
+      const rect = layer.getBoundingClientRect();
+      layer.style.left = tuckedRecordingSide === "left" ? `${28 - rect.width}px` : `${window.innerWidth - 28}px`;
+      layer.style.right = "auto";
+    }
+  }
+}
+function closeRecordingPlayer() {
+  document.getElementById("recording-player-layer")?.remove();
+  activeRecording = null;
+  tuckedRecordingSide = null;
+}
+
 function render() {
   headerSizeObserver.disconnect();
   if (S.view === "team" && !S.isTeam) S.view = "home";
-  const views = { home: homeHtml, about: aboutHtml, calendar: calendarHtml, people: peopleHtml, ask: askHtml, talk: talkHtml, team: teamHtml };
+  const views = { home: homeHtml, about: aboutHtml, calendar: calendarHtml, recordings: recordingsHtml, people: peopleHtml, ask: askHtml, talk: talkHtml, team: teamHtml };
   const isHome = S.view === "home";
   $("#app").innerHTML = `<div class="page"><div class="gridbg"></div>${headerHtml()}
     ${isHome ? heroHtml() + tickerHtml() : ""}
@@ -445,6 +523,7 @@ function render() {
               <a href="#home" data-act="nav" data-v="home">Home</a>
               <a href="#about" data-act="nav" data-v="about">About us</a>
               <a href="#calendar" data-act="nav" data-v="calendar">Events</a>
+              <a href="#recordings" data-act="nav" data-v="recordings">Recordings</a>
               <a href="#people" data-act="nav" data-v="people">Our team</a>
             </div>
             <div><h4>Connect</h4>
@@ -459,6 +538,7 @@ function render() {
   headerSizeObserver.observe($(".topbar"));
   updateDateVisibility();
   updateCountdowns();
+  syncRecordingPlayer();
 }
 
 function headerHtml() {
@@ -478,7 +558,7 @@ function headerHtml() {
 }
 
 function navHtml() {
-  const tabs = [["home", "Home"], ["about", "About us"], ["calendar", "Events"], ["people", "Our team"], ["ask", "Ask & suggest"], ["talk", "Host a talk"]];
+  const tabs = [["home", "Home"], ["about", "About us"], ["calendar", "Events"], ["recordings", "Recordings"], ["people", "Our team"], ["ask", "Ask & suggest"], ["talk", "Host a talk"]];
   if (S.isTeam) tabs.push(["team", "Workspace"]);
   const n = unread();
   return `<nav class="nav" aria-label="Main">${tabs.map(([k, l]) => `<button class="navbtn${S.view === k ? " is-on" : ""}" data-act="nav" data-v="${k}">${l}${k === "home" && n && S.view !== "home" ? `<span class="badge">${n}</span>` : ""}</button>`).join("")}</nav>`;
@@ -622,6 +702,25 @@ function homeHtml() {
     ${subscribeHtml()}`;
 }
 
+const RECORDINGS = [
+  { id: "MmU7yE7s4F8", title: "Dream Bigger. Find Your Craft.", description: "A talk on ambition, purpose and pursuit - Lessons from the man who ruled a kingdom unlike any other." },
+  { id: "jL3eCFFKJ4E", title: "Mercy Within Grief", description: "Navigating life's darkest moments and the weight they leave behind." },
+  { id: "rvp71MCNHA4", title: "Finding the Self: Foundations of Muslim Psychology", description: "An introduction to Muslim psychology from first principles with guest speaker Dr. Aref Ali Nayed." }
+];
+
+function recordingsHtml() {
+  return `<section class="sec">
+    ${head("", "Recordings", "Watch & reflect")}
+    <p class="page-intro">Catch up on our recorded talks.</p>
+    <div class="recordings-grid">${RECORDINGS.map((r, i) => `<article class="recording">
+      <div class="recording-info"><h3>${String(i + 1).padStart(2, "0")} / ${esc(r.title)}</h3>
+      <p class="recording-description">${esc(r.description)}</p>
+      <a class="recording-link" href="https://www.youtube.com/watch?v=${r.id}" target="_blank" rel="noopener noreferrer">Watch on YouTube <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+      <div class="recording-slot" data-recording-slot="${r.id}">${activeRecording?.id === r.id ? "" : `<button class="recording-cover" type="button" data-act="play-recording" data-id="${r.id}" aria-label="Play ${esc(r.title)}"><img src="https://i.ytimg.com/vi/${r.id}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360"><span class="recording-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" focusable="false"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button>`}</div>
+    </article>`).join("")}</div>
+  </section>`;
+}
+
 function aboutHtml() {
   return `<section class="sec about-section">
     ${head("01", "About us", ABOUT.title)}
@@ -629,6 +728,7 @@ function aboutHtml() {
 
     <div class="sub-sec">${head("02", "FAQ", "Frequently Asked Questions")}</div>
     <div class="faq">${ABOUT.faqs.map((f, i) => `<details data-faq="${i}"${S.openFaq.has(i) ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
+    <p class="faq-padlet">Visit a community question and answer Padlet <a href="https://padlet.com/uobdisoc/islamic-q-a-s024ndxxzvp7t3z7zk8l" target="_blank" rel="noopener noreferrer">here</a>.</p>
   </section>`;
 }
 
@@ -649,7 +749,7 @@ function personHtml(p) {
 function peopleHtml() {
   const positions = teamPositions();
   return `<section class="sec">
-    ${head("01", "The committee", "Our team")}
+    ${head("", "The committee", "Our team")}
     <p class="muted page-intro">${esc(TEAM.intro)}</p>
     ${S.isTeam ? `<p class="muted page-intro">Use Edit position to update a title, name or bio. Saved changes are visible to everyone.</p>` : ""}
     ${["Leadership Team", "The Committee"].map(group => `<section class="team-group">
@@ -699,7 +799,7 @@ function calendarHtml() {
   const tba = list.filter((e) => !e.start);
   const filters = [["all", "All"], ...Object.entries(CATS).filter(([k]) => k !== "welcome").map(([k, c]) => [k, c.label])];
   const monthName = first.toLocaleDateString([], { month: "long", year: "numeric" });
-  return `<section class="sec">${head("01", "Events", "What's on")}
+  return `<section class="sec">${head("", "Events", "What's on")}
     <div class="calbar"><div class="calmonth">${esc(monthName)}</div>
       <div class="calnav"><button class="btn small" data-act="cal-prev" aria-label="Previous month">Previous</button><button class="btn small" data-act="cal-today">Today</button><button class="btn small" data-act="cal-next" aria-label="Next month">Next</button></div></div>
     <div class="filters">${filters.map(([k, l]) => `<button class="fbtn c-${k}${S.cat === k ? " is-on" : ""}" data-act="cal-cat" data-c="${k}">${k !== "all" ? ico(CATS[k].icon) : ""}${l}</button>`).join("")}</div>
@@ -724,8 +824,8 @@ function askHtml() {
         <div class="mactions"><button class="btn amber" type="submit">Send</button></div></form>`;
   const rows = mine.map((s) => `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "talk" ? "Talk application" : s.kind === "question" ? "Question" : "Suggestion"}</span><span class="chip ${s.status === "answered" ? "good" : "dim"}">${s.status === "answered" ? "Answered" : "Received"}</span></div>
       <p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
-  return `<section class="sec">${head("01", "Ask & suggest", "We’re listening")}
-    <p class="page-intro ask-intro">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.</p>
+  return `<section class="sec">${head("", "Ask & suggest", "We’re listening")}
+    <p class="page-intro ask-intro">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.<span class="ask-padlet">Visit a community question and answer Padlet <a class="padlet-link" href="https://padlet.com/uobdisoc/islamic-q-a-s024ndxxzvp7t3z7zk8l" target="_blank" rel="noopener noreferrer">here</a>.</span></p>
     <div class="askgrid"><div>${form}</div>
       <section class="ask-messages" aria-labelledby="your-messages-heading"><h3 id="your-messages-heading">Your messages</h3>${rows || `<p class="empty">Nothing sent yet.</p>`}</section></div></section>`;
 }
@@ -734,7 +834,7 @@ function askHtml() {
 function talkHtml() {
   const mine = S.submissions.filter(s => s.kind === "talk" && S.user && s.uid === S.user.uid).sort((a, b) => b.createdAt - a.createdAt);
   const form = !S.user
-    ? `<div class="card pad"><p>Sign in with Google to apply to host a talk.</p><button class="btn amber" data-act="sign-in">Sign in</button></div>`
+    ? `<div class="card pad"><p>Sign in with Google to apply to host a talk.</p><div class="mactions"><button class="btn amber" data-act="sign-in">Sign in</button></div></div>`
     : `<form data-form="talk" style="max-width:640px"><label class="lbl" for="talk-fullName">Full name</label><input class="field" id="talk-fullName" name="fullName" type="text" autocomplete="name" maxlength="120" required data-draft="talk-fullName" value="${dv("talk-fullName")}">
 <label class="lbl" for="talk-studentId">Student ID</label><input class="field" id="talk-studentId" name="studentId" type="text" maxlength="40" required data-draft="talk-studentId" value="${dv("talk-studentId")}">
 <label class="lbl" for="talk-title">Talk title</label><input class="field" id="talk-title" name="title" type="text" maxlength="120" required data-draft="talk-title" value="${dv("talk-title")}">
@@ -745,8 +845,8 @@ function talkHtml() {
 <label class="lbl" for="talk-whatsapp">WhatsApp number</label><input class="field" id="talk-whatsapp" name="whatsapp" type="tel" autocomplete="tel" maxlength="40" placeholder="Include your country code, e.g. +971" required data-draft="talk-whatsapp" value="${dv("talk-whatsapp")}">
       <div class="mactions"><button class="btn amber" type="submit">Submit application</button></div></form>`;
   const rows = mine.map(s => `<div class="sub-row"><div class="top-line"><span class="chip">Talk application</span><span class="chip">${esc(s.status === "answered" ? "Answered" : s.status === "archived" ? "Archived" : "Received")}</span></div><p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
-  return `<section class="sec">${head("01", "Host a talk", "Share your knowledge")}
-    <p class="muted">Have something to share? Tell us about your proposed talk and how we can contact you.</p>
+  return `<section class="sec">${head("", "Host a talk", "Share your knowledge")}
+    <p class="page-intro talk-intro">Have something to share? Tell us about your proposed talk and how we can contact you.</p>
     ${form}
     ${rows ? `<section style="max-width:640px;margin-top:40px" aria-labelledby="talk-applications-heading"><div class="sec-head"><h2 id="talk-applications-heading">Your applications</h2><span class="rule"></span></div>${rows}</section>` : ""}</section>`;
 }
@@ -1160,6 +1260,53 @@ document.addEventListener("click", async (e) => {
   const ev = id ? S.events.find((x) => x.id === id) : null;
 
   switch (act) {
+    case "play-recording": {
+      const recording = RECORDINGS.find(r => r.id === id);
+      if (!recording) return;
+      closeRecordingPlayer();
+      activeRecording = recording;
+      const layer = document.createElement("section");
+      layer.id = "recording-player-layer";
+      layer.setAttribute("aria-label", "Recording player");
+      layer.innerHTML = `<div class="recording-player-bar"><button class="recording-drag" type="button" aria-label="Move video player" title="Drag to move; use arrow keys when focused"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-act="tuck-recording" aria-label="Tuck video to screen edge" title="Tuck video away"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-act="close-recording" aria-label="Close video"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>`;
+      const player = document.createElement("iframe");
+      player.className = "recording-player";
+      player.src = `https://www.youtube-nocookie.com/embed/${recording.id}?playsinline=1&autoplay=1`;
+      player.title = recording.title;
+      player.referrerPolicy = "strict-origin-when-cross-origin";
+      player.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      player.allowFullscreen = true;
+      const restore = document.createElement("button");
+      restore.type = "button";
+      restore.className = "recording-restore";
+      restore.dataset.act = "restore-recording";
+      restore.setAttribute("aria-label", "Bring video back");
+      restore.hidden = true;
+      restore.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      layer.appendChild(restore);
+      layer.appendChild(player);
+      document.body.appendChild(layer);
+      enableRecordingDrag(layer);
+      render();
+      player.focus();
+      return;
+    }
+    case "tuck-recording": {
+      const layer = document.getElementById("recording-player-layer");
+      if (!layer || !layer.classList.contains("is-floating")) return;
+      const rect = layer.getBoundingClientRect();
+      tuckedRecordingSide = rect.left + rect.width / 2 < window.innerWidth / 2 ? "left" : "right";
+      syncRecordingPlayer();
+      layer.querySelector(".recording-restore").focus({ preventScroll: true });
+      return;
+    }
+    case "restore-recording": {
+      tuckedRecordingSide = null;
+      syncRecordingPlayer();
+      document.querySelector("#recording-player-layer .recording-drag")?.focus({ preventScroll: true });
+      return;
+    }
+    case "close-recording": closeRecordingPlayer(); render(); return;
     case "home-hero":
       e.preventDefault();
       if (S.view !== "home") location.hash = "home";
@@ -1451,6 +1598,8 @@ const updateDateVisibility = () => {
 window.addEventListener("scroll", updateDateVisibility, { passive: true });
 window.addEventListener("resize", updateDateVisibility);
 window.addEventListener("pageshow", updateDateVisibility);
+
+window.addEventListener("resize", syncRecordingPlayer);
 updateDateVisibility();
 
 /* =====================================================================
@@ -1462,7 +1611,10 @@ function tick() {
   checkReminders();
   updateCountdowns();
   const k = nextKey();
-  if (k !== shownNext && !S.modal && !typing()) render();
+  if (k !== shownNext && !S.modal && !typing()) {
+    shownNext = k;
+    if (S.view === "home") render();
+  }
 }
 setInterval(tick, 30000);
 setInterval(updateCountdowns, 1000);
