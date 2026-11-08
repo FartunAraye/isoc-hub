@@ -438,10 +438,12 @@ function positionFloatingRecording(layer, x, y, { overshoot = false, animate = f
   // While dragging, the sides may slide off-screen (so the video can be tucked); up/down never can.
   const minLeft = overshoot ? 28 - rect.width : 8;
   const maxLeft = overshoot ? window.innerWidth - 28 : window.innerWidth - rect.width - 8;
-  const left = Math.max(minLeft, Math.min(x, maxLeft));
+  const centred = (window.innerWidth - rect.width) / 2;
+  const portrait = recordingAxis() === "y";
+  const left = portrait && !overshoot ? centred : Math.max(minLeft, Math.min(x, maxLeft));
   const top = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
   floatingRecordingPosition = {
-    x: Math.max(8, Math.min(left, window.innerWidth - rect.width - 8)),
+    x: portrait ? centred : Math.max(8, Math.min(left, window.innerWidth - rect.width - 8)),
     y: top
   };
   layer.style.transition = animate ? "left .3s ease, top .3s ease" : "none";
@@ -466,13 +468,15 @@ function tuckRecording(layer, side) {
   tuckedRecordingSide = side;
   syncRecordingPlayer();
 }
+// Held upright ("y"): the video only slides up/down, centred. Wide screens ("x"): only left/right. Either can tuck to a side.
+function recordingAxis() { return window.matchMedia("(orientation: portrait)").matches ? "y" : "x"; }
 function enableRecordingDrag(layer) {
   const pad = layer.querySelector(".recording-dragpad");
   let drag = null, interactTimer = null;
   const start = e => {
     if (!layer.classList.contains("is-floating") || !e.isPrimary || e.button !== 0) return;
     const rect = layer.getBoundingClientRect();
-    drag = { id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top, sx: e.clientX, sy: e.clientY, moved: false, el: e.currentTarget };
+    drag = { baseTop: rect.top, id: e.pointerId, x: e.clientX - rect.left, y: e.clientY - rect.top, sx: e.clientX, sy: e.clientY, moved: false, el: e.currentTarget };
     e.currentTarget.setPointerCapture(e.pointerId);
     e.preventDefault();
   };
@@ -483,7 +487,13 @@ function enableRecordingDrag(layer) {
     layer.classList.add("is-dragging");
     // Only a mostly-sideways drag may slide off the edge; moving up/down always stays on-screen.
     const horizontal = Math.abs(e.clientX - drag.sx) > Math.abs(e.clientY - drag.sy);
-    positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y, { overshoot: horizontal });
+    if (recordingAxis() === "y") {
+      // Upright: follow the finger up/down; only a clearly sideways drag may pull toward an edge.
+      positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y, { overshoot: horizontal });
+    } else {
+      // Wide screen: follow the finger anywhere; sliding past a side edge tucks it away.
+      positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y, { overshoot: true });
+    }
   };
   const finish = e => {
     if (!drag) return;
@@ -506,7 +516,7 @@ function enableRecordingDrag(layer) {
       tuckRecording(layer, rect.left + rect.width / 2 < window.innerWidth / 2 ? "left" : "right");
       layer.querySelector(".recording-restore").focus({ preventScroll: true });
     } else {
-      positionFloatingRecording(layer, rect.left, rect.top, { animate: true });
+      positionFloatingRecording(layer, rect.left, rect.top);
     }
   };
   for (const el of [pad]) {
@@ -518,10 +528,44 @@ function enableRecordingDrag(layer) {
   pad.addEventListener("keydown", e => {
     const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (!steps[e.key] || !layer.classList.contains("is-floating")) return;
+    if (recordingAxis() === "y" && steps[e.key][0]) return;
     e.preventDefault();
     const rect = layer.getBoundingClientRect(), step = e.shiftKey ? 40 : 10;
     positionFloatingRecording(layer, rect.left + steps[e.key][0] * step, rect.top + steps[e.key][1] * step);
   });
+
+  // The green tab can be dragged up/down along the edge; a plain tap still brings the video back.
+  const tab = layer.querySelector(".recording-restore");
+  let tabDrag = null;
+  tab.addEventListener("pointerdown", e => {
+    if (!e.isPrimary || e.button !== 0) return;
+    tabDrag = { id: e.pointerId, sy: e.clientY, top: layer.getBoundingClientRect().top, moved: false };
+    tab.setPointerCapture(e.pointerId);
+  });
+  tab.addEventListener("pointermove", e => {
+    if (!tabDrag || tabDrag.id !== e.pointerId) return;
+    if (!tabDrag.moved && Math.abs(e.clientY - tabDrag.sy) < 6) return;
+    tabDrag.moved = true;
+    const h = layer.getBoundingClientRect().height;
+    const top = Math.max(8, Math.min(tabDrag.top + e.clientY - tabDrag.sy, window.innerHeight - h - 8));
+    layer.style.transition = "none";
+    layer.style.top = `${top}px`;
+    layer.style.bottom = "auto";
+    if (floatingRecordingPosition) floatingRecordingPosition.y = top;
+  });
+  const endTab = e => {
+    if (!tabDrag) return;
+    const moved = tabDrag.moved;
+    tabDrag = null;
+    if (moved && e.type === "pointerup") {
+      // Swallow the click that follows a drag so it doesn't also restore the video.
+      const swallow = ev => ev.stopPropagation();
+      tab.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => tab.removeEventListener("click", swallow, { capture: true }), 80);
+    }
+  };
+  tab.addEventListener("pointerup", endTab);
+  tab.addEventListener("pointercancel", endTab);
 }
 function syncRecordingPlayer() {
   const layer = document.getElementById("recording-player-layer");
@@ -1645,6 +1689,20 @@ const updateDateVisibility = () => {
   if (nav) nav.inert = matchMedia("(max-width:640px)").matches && root.classList.contains("compact-phone-nav");
 };
 window.addEventListener("scroll", updateDateVisibility, { passive: true });
+
+// While the video sits in the Recordings page, keep it glued to its slot when the layout shifts
+// (the header collapses on scroll, the phone's address bar resizes the view, images load...).
+let slotSyncQueued = false;
+const syncRecordingSlot = () => {
+  if (slotSyncQueued) return;
+  slotSyncQueued = true;
+  requestAnimationFrame(() => {
+    slotSyncQueued = false;
+    if (document.getElementById("recording-player-layer")?.dataset.mode === "slot") syncRecordingPlayer();
+  });
+};
+window.addEventListener("scroll", syncRecordingSlot, { passive: true });
+new ResizeObserver(syncRecordingSlot).observe(document.body);
 window.addEventListener("resize", updateDateVisibility);
 window.addEventListener("pageshow", updateDateVisibility);
 

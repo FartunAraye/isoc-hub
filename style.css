@@ -466,7 +466,8 @@ section.block{padding-top:56px}
 #recording-player-layer .recording-player{height:100%;min-height:0;border-radius:0}
 .recording-player-bar{display:none}
 #recording-player-layer.is-floating{position:fixed;z-index:40;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100vw - 32px));box-shadow:0 8px 32px rgba(0,0,0,.3);border:1px solid var(--rule)}
-#recording-player-layer.is-floating .recording-player{height:auto;aspect-ratio:16/9}
+#recording-player-layer.is-floating{aspect-ratio:16/9}
+#recording-player-layer.is-floating .recording-player{height:100%;aspect-ratio:auto}
 .is-floating .recording-player-bar{display:flex;justify-content:flex-end;position:absolute;top:8px;left:8px;right:8px;z-index:1;color:#fff;pointer-events:none}
 .recording-player-bar a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600}
 .recording-player-bar button{display:grid;place-items:center;width:32px;height:32px;border:1px solid rgba(255,255,255,.4);border-radius:50%;background:rgba(0,0,0,.7);color:inherit}
@@ -493,3 +494,5 @@ section.block{padding-top:56px}
 /* Smooth slide: fade the chrome while the layer slides off-screen. */
 #recording-player-layer{transition:background-color .3s ease,border-color .3s ease,box-shadow .3s ease}
 .recording-player,.recording-player-bar{transition:opacity .3s ease}
+
+.recording-restore{touch-action:none;cursor:grab}
