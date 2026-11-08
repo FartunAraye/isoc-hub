@@ -402,7 +402,7 @@ section.block{padding-top:56px}
   .who{display:none}
   .hero{gap:32px;padding-top:36px;padding-bottom:40px}
   /* Keep the introduction in the first screen; the event card follows below. */
-  .hero-in{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start;padding-bottom:24px}
+  .hero-in{display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;min-height:calc(100svh - var(--header-height,160px) - 36px);padding-bottom:24px}
   .hero h1{font-size:clamp(52px,16vw,82px)}
   .bismillah{font-size:20px}
   .eyebrow{font-size:10px;letter-spacing:.12em}
