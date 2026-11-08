@@ -431,6 +431,79 @@ const headerSizeObserver = new ResizeObserver(([entry]) => {
 
 // The player lives outside #app so rendering or switching tabs never reloads it.
 let activeRecording = null;
+const recordingProgress = new Map();
+const openedRecordingPlayers = new Map();
+let recordingController = null;
+let youtubeApiPromise = null;
+function loadRecordingApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (!youtubeApiPromise) {
+    youtubeApiPromise = new Promise((resolve, reject) => {
+      const previous = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        previous?.();
+        resolve(window.YT);
+      };
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.onerror = () => { youtubeApiPromise = null; reject(new Error("YouTube controls unavailable")); };
+      document.head.appendChild(script);
+    });
+  }
+  return youtubeApiPromise;
+}
+function saveRecordingProgress() {
+  if (!activeRecording || !recordingController?.getCurrentTime) return;
+  const seconds = recordingController.getPlayerState?.() === 0 ? 0 : recordingController.getCurrentTime();
+  if (Number.isFinite(seconds) && seconds >= 0) recordingProgress.set(activeRecording.id, seconds);
+}
+function parkRecordingPlayer() {
+  if (!activeRecording) return;
+  saveRecordingProgress();
+  const entry = openedRecordingPlayers.get(activeRecording.id);
+  if (entry) {
+    entry.controller?.pauseVideo?.();
+    entry.layer.id = `recording-paused-${activeRecording.id}`;
+    entry.layer.classList.remove("is-floating", "is-tucked", "is-dragging", "is-interacting");
+    entry.layer.dataset.mode = "slot";
+  }
+  recordingController = null;
+  activeRecording = null;
+  tuckedRecordingSide = null;
+}
+function activateRecordingPlayer(recording) {
+  if (activeRecording?.id === recording.id) return;
+  parkRecordingPlayer();
+  const entry = openedRecordingPlayers.get(recording.id);
+  activeRecording = recording;
+  recordingController = entry.controller;
+  entry.layer.id = "recording-player-layer";
+  entry.layer.style.visibility = "";
+  entry.controller?.playVideo?.();
+  render();
+}
+function trackRecordingProgress(iframe, recording) {
+  loadRecordingApi().then(YT => {
+    if (!iframe.isConnected) return;
+    new YT.Player(iframe, {
+      events: {
+        onReady: e => {
+          const entry = openedRecordingPlayers.get(recording.id);
+          if (!entry || !iframe.isConnected) return;
+          entry.controller = e.target;
+          if (activeRecording?.id === recording.id) recordingController = e.target;
+          else e.target.pauseVideo();
+        },
+        onStateChange: e => {
+          if (!iframe.isConnected) return;
+          if (e.data === 1 && activeRecording?.id !== recording.id) activateRecordingPlayer(recording);
+          const seconds = e.data === 0 ? 0 : e.target.getCurrentTime();
+          if (Number.isFinite(seconds)) recordingProgress.set(recording.id, seconds);
+        }
+      }
+    });
+  }).catch(err => console.warn("Recording resume unavailable:", err));
+}
 let floatingRecordingPosition = null;
 let tuckedRecordingSide = null;
 function positionFloatingRecording(layer, x, y, { overshoot = false, animate = false } = {}) {
@@ -438,12 +511,10 @@ function positionFloatingRecording(layer, x, y, { overshoot = false, animate = f
   // While dragging, the sides may slide off-screen (so the video can be tucked); up/down never can.
   const minLeft = overshoot ? 28 - rect.width : 8;
   const maxLeft = overshoot ? window.innerWidth - 28 : window.innerWidth - rect.width - 8;
-  const centred = (window.innerWidth - rect.width) / 2;
-  const portrait = recordingAxis() === "y";
-  const left = portrait && !overshoot ? centred : Math.max(minLeft, Math.min(x, maxLeft));
+  const left = Math.max(minLeft, Math.min(x, maxLeft));
   const top = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
   floatingRecordingPosition = {
-    x: portrait ? centred : Math.max(8, Math.min(left, window.innerWidth - rect.width - 8)),
+    x: Math.max(8, Math.min(left, window.innerWidth - rect.width - 8)),
     y: top
   };
   layer.style.transition = animate ? "left .3s ease, top .3s ease" : "none";
@@ -468,8 +539,6 @@ function tuckRecording(layer, side) {
   tuckedRecordingSide = side;
   syncRecordingPlayer();
 }
-// Held upright ("y"): the video only slides up/down, centred. Wide screens ("x"): only left/right. Either can tuck to a side.
-function recordingAxis() { return window.matchMedia("(orientation: portrait)").matches ? "y" : "x"; }
 function enableRecordingDrag(layer) {
   const pad = layer.querySelector(".recording-dragpad");
   let drag = null, interactTimer = null;
@@ -487,13 +556,7 @@ function enableRecordingDrag(layer) {
     layer.classList.add("is-dragging");
     // Only a mostly-sideways drag may slide off the edge; moving up/down always stays on-screen.
     const horizontal = Math.abs(e.clientX - drag.sx) > Math.abs(e.clientY - drag.sy);
-    if (recordingAxis() === "y") {
-      // Upright: follow the finger up/down; only a clearly sideways drag may pull toward an edge.
-      positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y, { overshoot: horizontal });
-    } else {
-      // Wide screen: follow the finger anywhere; sliding past a side edge tucks it away.
-      positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y, { overshoot: true });
-    }
+    positionFloatingRecording(layer, e.clientX - drag.x, e.clientY - drag.y, { overshoot: horizontal });
   };
   const finish = e => {
     if (!drag) return;
@@ -528,7 +591,7 @@ function enableRecordingDrag(layer) {
   pad.addEventListener("keydown", e => {
     const steps = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (!steps[e.key] || !layer.classList.contains("is-floating")) return;
-    if (recordingAxis() === "y" && steps[e.key][0]) return;
+
     e.preventDefault();
     const rect = layer.getBoundingClientRect(), step = e.shiftKey ? 40 : 10;
     positionFloatingRecording(layer, rect.left + steps[e.key][0] * step, rect.top + steps[e.key][1] * step);
@@ -568,6 +631,18 @@ function enableRecordingDrag(layer) {
   tab.addEventListener("pointercancel", endTab);
 }
 function syncRecordingPlayer() {
+  for (const [id, entry] of openedRecordingPlayers) {
+    if (activeRecording?.id === id) continue;
+    const slot = S.view === "recordings" ? document.querySelector(`[data-recording-slot="${id}"]`) : null;
+    if (slot) {
+      const rect = slot.getBoundingClientRect();
+      entry.layer.style.cssText = `left:${rect.left + window.scrollX}px;top:${rect.top + window.scrollY}px;width:${rect.width}px;height:${rect.height}px`;
+    } else {
+      // Keep paused players mounted so their current frames and buffers survive navigation.
+      entry.layer.style.visibility = "hidden";
+      entry.layer.style.pointerEvents = "none";
+    }
+  }
   const layer = document.getElementById("recording-player-layer");
   if (!layer || !activeRecording || layer.classList.contains("is-dragging")) return;
   const slot = S.view === "recordings"
@@ -599,6 +674,10 @@ function syncRecordingPlayer() {
   }
 }
 function closeRecordingPlayer() {
+  saveRecordingProgress();
+  if (activeRecording) openedRecordingPlayers.delete(activeRecording.id);
+  recordingController?.destroy?.();
+  recordingController = null;
   document.getElementById("recording-player-layer")?.remove();
   activeRecording = null;
   tuckedRecordingSide = null;
@@ -813,7 +892,7 @@ function recordingsHtml() {
       <div class="recording-info"><h3>${String(i + 1).padStart(2, "0")} / ${esc(r.title)}</h3>
       <p class="recording-description">${esc(r.description)}</p>
       <a class="recording-link" href="https://www.youtube.com/watch?v=${r.id}" target="_blank" rel="noopener noreferrer">Watch on YouTube <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
-      <div class="recording-slot" data-recording-slot="${r.id}">${activeRecording?.id === r.id ? "" : `<button class="recording-cover" type="button" data-act="play-recording" data-id="${r.id}" aria-label="Play ${esc(r.title)}"><img src="https://i.ytimg.com/vi/${r.id}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360"><span class="recording-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" focusable="false"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button>`}</div>
+      <div class="recording-slot" data-recording-slot="${r.id}">${openedRecordingPlayers.has(r.id) ? "" : `<button class="recording-cover" type="button" data-act="play-recording" data-id="${r.id}" aria-label="Play ${esc(r.title)}"><img src="https://i.ytimg.com/vi/${r.id}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360"><span class="recording-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" focusable="false"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button>`}</div>
     </article>`).join("")}</div>
   </section>`;
 }
@@ -1360,15 +1439,21 @@ document.addEventListener("click", async (e) => {
     case "play-recording": {
       const recording = RECORDINGS.find(r => r.id === id);
       if (!recording) return;
-      closeRecordingPlayer();
+      if (openedRecordingPlayers.has(recording.id)) {
+        activateRecordingPlayer(recording);
+        return;
+      }
+      parkRecordingPlayer();
       activeRecording = recording;
       const layer = document.createElement("section");
       layer.id = "recording-player-layer";
+      layer.className = "recording-playback-layer";
       layer.setAttribute("aria-label", "Recording player");
       layer.innerHTML = `<div class="recording-player-bar"><button type="button" data-act="close-recording" aria-label="Close video"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div>`;
       const player = document.createElement("iframe");
       player.className = "recording-player";
-      player.src = `https://www.youtube-nocookie.com/embed/${recording.id}?playsinline=1&autoplay=1`;
+      const resumeAt = Math.floor(recordingProgress.get(recording.id) || 0);
+      player.src = `https://www.youtube-nocookie.com/embed/${recording.id}?playsinline=1&autoplay=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}&start=${resumeAt}`;
       player.title = recording.title;
       player.referrerPolicy = "strict-origin-when-cross-origin";
       player.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
@@ -1388,6 +1473,8 @@ document.addEventListener("click", async (e) => {
       layer.appendChild(player);
       layer.appendChild(pad);
       document.body.appendChild(layer);
+      openedRecordingPlayers.set(recording.id, { layer, controller: null });
+      trackRecordingProgress(player, recording);
       enableRecordingDrag(layer);
       render();
       player.focus();
