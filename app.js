@@ -904,7 +904,7 @@ function aboutHtml() {
 
     <div class="sub-sec">${head("02", "FAQ", "Frequently Asked Questions")}</div>
     <div class="faq">${ABOUT.faqs.map((f, i) => `<details data-faq="${i}"${S.openFaq.has(i) ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
-    <p class="faq-padlet">Visit a community question and answer Padlet <a href="https://padlet.com/uobdisoc/islamic-q-a-s024ndxxzvp7t3z7zk8l" target="_blank" rel="noopener noreferrer">here</a>.</p>
+    <p class="faq-padlet">Visit a community Q&amp;A Padlet <a href="https://padlet.com/uobdisoc/islamic-q-a-s024ndxxzvp7t3z7zk8l" target="_blank" rel="noopener noreferrer">here</a>.</p>
   </section>`;
 }
 
@@ -1001,7 +1001,7 @@ function askHtml() {
   const rows = mine.map((s) => `<div class="sub-row"><div class="top-line"><span class="chip">${s.kind === "talk" ? "Talk application" : s.kind === "question" ? "Question" : "Suggestion"}</span><span class="chip ${s.status === "answered" ? "good" : "dim"}">${s.status === "answered" ? "Answered" : "Received"}</span></div>
       <p class="txt">${esc(s.text)}</p>${s.reply ? `<div class="reply"><b>From the team</b><p style="white-space:pre-line">${esc(s.reply)}</p></div>` : ""}</div>`).join("");
   return `<section class="sec">${head("", "Ask & suggest", "We’re listening")}
-    <p class="page-intro ask-intro">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.<span class="ask-padlet">Visit a community question and answer Padlet <a class="padlet-link" href="https://padlet.com/uobdisoc/islamic-q-a-s024ndxxzvp7t3z7zk8l" target="_blank" rel="noopener noreferrer">here</a>.</span></p>
+    <p class="page-intro ask-intro">Got an idea for an event, or a question for the committee? Tell us. Messages go to the team only.<span class="ask-padlet">Visit a community Q&amp;A Padlet <a class="padlet-link" href="https://padlet.com/uobdisoc/islamic-q-a-s024ndxxzvp7t3z7zk8l" target="_blank" rel="noopener noreferrer">here</a>.</span></p>
     <div class="askgrid"><div>${form}</div>
       <section class="ask-messages" aria-labelledby="your-messages-heading"><h3 id="your-messages-heading">Your messages</h3>${rows || `<p class="empty">Nothing sent yet.</p>`}</section></div></section>`;
 }
